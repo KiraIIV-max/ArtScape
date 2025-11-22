@@ -1,23 +1,24 @@
 import React from "react";
 import imgFooter from "../../src/assets/ChatGPT Image Nov 18, 2025, 07_13_13 PM.png";
 import Photoroom from "../../src/assets/1-2Photoroom.png";
-
+import { Link } from "react-router-dom";
 const Footer = () => {
   return (
-    <section className="">
-        <hr className="w-full h-0.5 bg-gray-400" />
+    <section className="pt-15">
+        <hr className="w-10/12 m-auto h-0.5 bg-gray-400" />
       <footer className="   mx-10  pb-6  pt-6 grid grid-cols-3 gap-10">
         <div className="  text-center mt-14 ">
           <ul className="flex gap-8 flex-col text-xl font-semibold text-black">
             {["About", "Contact", "Bid", "Art", "Time"].map((label) => (
               <li key={label}>
-                <a
-                  href={`#${label.toLowerCase()}`}
-                  className=" pb-6  border-b-2 block transition duration-300 ease-in-out hover:-translate-y-2 "
+      <Link
+        to={`/${label.toLowerCase() === "home" ? "" : label.toLowerCase()}`}
+        className=" pb-6  border-b-2 block transition duration-300 ease-in-out hover:-translate-y-2 "
                 >
-                  {label}
-                </a>
-              </li>
+
+        {label}
+      </Link>
+    </li>
             ))}
           </ul>
           <div className=" ml-19 mt-8 flex gap-4 text-xl">

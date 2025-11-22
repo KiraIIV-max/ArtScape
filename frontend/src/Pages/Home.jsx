@@ -72,7 +72,7 @@ const Home = () => {
             where Art <br /> comes Alive
           </h1>
           <button className="text-xl group uppercase mt-8 z-20 ml-5 px-4 py-2 hover:text-white transition duration-500 ease-in-out relative overflow-hidden">
-            <Link to="/register">get in touch</Link>
+            <Link to="/register">Register Now</Link>
             <span className="absolute left-0 bottom-0 rounded-xl  w-full bg-black h-0.5 -z-10 group-hover:h-full transition-all duration-500 ease-in-out"></span>
           </button>
         </div>

@@ -44,7 +44,7 @@ const Register = () => {
             start for free
           </p>
           <h1 className="text-5xl pb-3 font-serif">
-            Medhat is here <span className="text-7xl text-blue-600">.</span>
+            Create an account <span className="text-7xl text-blue-600">.</span>
           </h1>
           <p className="uppercase text-gray-500 text-sm">
             Already have an account?{" "}

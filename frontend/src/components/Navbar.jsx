@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Photoroom from "../../src/assets/1-2Photoroom.png";
 import gsap from "gsap";
+import { Link } from "react-router-dom";
 
 function Navbar() {
   const location = useLocation();
@@ -34,18 +35,18 @@ function Navbar() {
         Universe
       </h1>
       <nav className="my-auto">
-        <ul className="flex gap-10 text-xl font-semibold text-black">
-          {["About", "Contact", "Bid", "Art", "Time"].map((label) => (
-            <li key={label}>
-              <a
-                href={`#${label.toLowerCase()}`}
-                className=" transition duration-300 ease-in-out hover:text-sky-800 hover:underline"
-              >
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
+<ul className="flex gap-10 text-xl font-semibold text-black">
+  {["Home", "Contact", "Bid", "Art", "Time"].map((label) => (
+    <li key={label}>
+      <Link
+        to={`/${label.toLowerCase() === "home" ? "" : label.toLowerCase()}`}
+        className="transition duration-300 ease-in-out hover:text-sky-800 hover:underline"
+      >
+        {label}
+      </Link>
+    </li>
+  ))}
+</ul>
       </nav>
     </section>
   );
