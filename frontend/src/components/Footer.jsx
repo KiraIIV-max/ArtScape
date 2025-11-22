@@ -5,20 +5,21 @@ import { Link } from "react-router-dom";
 const Footer = () => {
   return (
     <section className="pt-15">
-        <hr className="w-10/12 m-auto h-0.5 bg-gray-400" />
+      <hr className="w-10/12 m-auto h-0.5 bg-gray-400" />
       <footer className="   mx-10  pb-6  pt-6 grid grid-cols-3 gap-10">
         <div className="  text-center mt-14 ">
           <ul className="flex gap-8 flex-col text-xl font-semibold text-black">
             {["About", "Contact", "Bid", "Art", "Time"].map((label) => (
               <li key={label}>
-      <Link
-        to={`/${label.toLowerCase() === "home" ? "" : label.toLowerCase()}`}
-        className=" pb-6  border-b-2 block transition duration-300 ease-in-out hover:-translate-y-2 "
+                <Link
+                  to={`/${
+                    label.toLowerCase() === "home" ? "" : label.toLowerCase()
+                  }`}
+                  className=" pb-6  border-b-2 block transition duration-300 ease-in-out hover:-translate-y-2 "
                 >
-
-        {label}
-      </Link>
-    </li>
+                  {label}
+                </Link>
+              </li>
             ))}
           </ul>
           <div className=" ml-19 mt-8 flex gap-4 text-xl">
@@ -49,20 +50,27 @@ const Footer = () => {
           <p className="text-gray-700">Contact Us Today!</p>
         </div>
         <div className=" mt-14 flex flex-col gap-10 text-center max-w-[350px]">
-          <p>🚚 <br />Delivery Daily since 2010</p>
           <p>
-            🕒 <br /> Monday - Friday: 8AM - 6PM <br /> Saturday: 8AM - 1PM <br /> Sunday:
-            Closed
+            🚚 <br />
+            Delivery Daily since 2010
           </p>
-          <p>📞 <br /> +201550611702</p>
-          <p>📧 <br /> info@email.com</p>
           <p>
-             🏠 <br /> 123 Example Road <br /> New York, NY 12345
+            🕒 <br /> Monday - Friday: 8AM - 6PM <br /> Saturday: 8AM - 1PM{" "}
+            <br /> Sunday: Closed
+          </p>
+          <p>
+            📞 <br /> +201550611702
+          </p>
+          <p>
+            📧 <br /> info@email.com
+          </p>
+          <p>
+            🏠 <br /> 123 Example Road <br /> New York, NY 12345
           </p>
         </div>
       </footer>
       <hr className="w-full h-0.5 bg-gray-400" />
-      
+
       <div className="flex justify-around py-4 bg-sky-900 text-white">
         <p>© Flora & Grace. All rights reserved 2025</p>
         <p>Privacy Policy | Terms & Conditions</p>

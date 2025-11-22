@@ -5,7 +5,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 const Offer = () => {
-      const container = useRef();
+  const container = useRef();
 
   useEffect(() => {
     let ctx = gsap.context(() => {
@@ -34,33 +34,46 @@ const Offer = () => {
         <p className="offer-item text-red-500 uppercase font-serif">
           Excellence is our standard
         </p>
-        <h2 className="offer-item text-7xl uppercase font-serif">What we offer</h2>
+        <h2 className="offer-item text-7xl uppercase font-serif">
+          What we offer
+        </h2>
         <div className="border-b-2 w-full pb-12 offer-item">
-          <h3 className="my-10 font-serif text-4xl mx-4">🌌 Immersive Exhibitions</h3>
-          <p className="text-gray-600 mx-10 font-serif"> 
+          <h3 className="my-10 font-serif text-4xl mx-4">
+            🌌 Immersive Exhibitions
+          </h3>
+          <p className="text-gray-600 mx-10 font-serif">
             Our spaces blend light, sound, and design to bring art to life.
-            Visitors don’t just view — they experience each piece on a deeper level.
+            Visitors don’t just view — they experience each piece on a deeper
+            level.
           </p>
         </div>
         <div className="border-b-2 w-full pb-12 offer-item">
-          <h3 className="my-10 font-serif text-4xl mx-4">🖼️ Curated Masterpieces</h3>
+          <h3 className="my-10 font-serif text-4xl mx-4">
+            🖼️ Curated Masterpieces
+          </h3>
           <p className="text-gray-600 mx-10 font-serif">
             We hand-select each piece for its emotion, beauty, and story. Every
             artwork is chosen to inspire and resonate deeply with our audience.
           </p>
         </div>
         <div className="border-b-2 w-full pb-12 offer-item">
-          <h3 className="my-10 font-serif text-4xl mx-4">🖋️ Artistic Precision</h3>
+          <h3 className="my-10 font-serif text-4xl mx-4">
+            🖋️ Artistic Precision
+          </h3>
           <p className="text-gray-600 mx-10 font-serif">
             From layout to typography, every detail is crafted. We blend design
-            and storytelling with seamless flow to elevate the visitor journey and create unforgettable moments.
+            and storytelling with seamless flow to elevate the visitor journey
+            and create unforgettable moments.
           </p>
         </div>
         <div className="border-b-2 w-full pb-12 offer-item">
-          <h3 className="my-10 font-serif text-4xl mx-4">🕊️ Immersive Atmosphere</h3>
+          <h3 className="my-10 font-serif text-4xl mx-4">
+            🕊️ Immersive Atmosphere
+          </h3>
           <p className="text-gray-600 mx-10 font-serif">
             Our exhibitions are designed to feel alive. Light, space, and
-            movement guide your journey through each artwork, creating a dynamic and engaging experience.
+            movement guide your journey through each artwork, creating a dynamic
+            and engaging experience.
           </p>
         </div>
       </div>

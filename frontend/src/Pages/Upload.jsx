@@ -5,7 +5,7 @@ import Footer from "../components/Footer";
 const Upload = () => {
   return (
     <>
-    <Navbar/>
+      <Navbar />
       <section className="mx-20">
         <h1 className="text-4xl text-center pb-14">Upload Your Art</h1>
         <div>
@@ -67,7 +67,7 @@ const Upload = () => {
           </form>
         </div>
       </section>
-      <Footer/>
+      <Footer />
     </>
   );
 };

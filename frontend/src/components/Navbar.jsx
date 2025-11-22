@@ -19,12 +19,12 @@ function Navbar() {
   }, [location.pathname]);
 
   return (
-<section
-  id="nav_ani"
-  className={`transition duration-850 ease-in-out py-6 mx-20 max-w-full flex justify-between
+    <section
+      id="nav_ani"
+      className={`transition duration-850 ease-in-out py-6 mx-20 max-w-full flex justify-between
     ${location.pathname === "/" ? "opacity-0" : "opacity-100"}
   `}
->
+    >
       <h1 className="font-bold text-4xl font-style italic">
         ArtScape{" "}
         <img
@@ -35,18 +35,20 @@ function Navbar() {
         Universe
       </h1>
       <nav className="my-auto">
-<ul className="flex gap-10 text-xl font-semibold text-black">
-  {["Home", "Contact", "Bid", "Art", "Time"].map((label) => (
-    <li key={label}>
-      <Link
-        to={`/${label.toLowerCase() === "home" ? "" : label.toLowerCase()}`}
-        className="transition duration-300 ease-in-out hover:text-sky-800 hover:underline"
-      >
-        {label}
-      </Link>
-    </li>
-  ))}
-</ul>
+        <ul className="flex gap-10 text-xl font-semibold text-black">
+          {["Home", "Contact", "Bid", "Art", "Time"].map((label) => (
+            <li key={label}>
+              <Link
+                to={`/${
+                  label.toLowerCase() === "home" ? "" : label.toLowerCase()
+                }`}
+                className="transition duration-300 ease-in-out hover:text-sky-800 hover:underline"
+              >
+                {label}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </nav>
     </section>
   );
