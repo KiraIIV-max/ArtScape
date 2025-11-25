@@ -5,7 +5,7 @@ import Footer from "../components/Footer";
 const Upload = () => {
   return (
     <>
-    <Navbar/>
+      <Navbar />
       <section className="mx-20">
         <h1 className="text-4xl text-center pb-14">Upload Your Art</h1>
         <div>
@@ -49,25 +49,25 @@ const Upload = () => {
                   placeholder="Enter your email"
                   required
                   type="email"
-                  name="name"
+                  name="email"
                   className="block rounded-full w-xl ml-3 px-10 py-3 bg-gray-200"
                 />
               </label>
               <label className=" text-black font-semibold">
                 Discription{" "}
-                <input
+                <textarea
                   placeholder="Discribe your art"
                   required
                   type="text"
-                  name="name"
-                  className="  block rounded-xl w-xl ml-3 px-10 py-30 bg-gray-200"
-                />
+                  name="description"
+                  className="  block rounded-xl w-xl ml-3 px-10 py-25 bg-gray-200"
+                ></textarea>
               </label>
             </div>
           </form>
         </div>
       </section>
-      <Footer/>
+      <Footer />
     </>
   );
 };
