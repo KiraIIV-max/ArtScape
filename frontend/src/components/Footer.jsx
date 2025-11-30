@@ -64,7 +64,7 @@ const Footer = () => {
       <hr className="w-full h-0.5 bg-gray-400" />
       
       <div className="flex justify-around py-4 bg-sky-900 text-white">
-        <p>© Flora & Grace. All rights reserved 2025</p>
+        <p>©ArtScape. All rights reserved 2025</p>
         <p>Privacy Policy | Terms & Conditions</p>
       </div>
     </section>
