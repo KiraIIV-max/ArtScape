@@ -22,6 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'status',
     ];
 
     /**
@@ -46,4 +48,19 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+// public function bids()
+//     {
+//         return $this->hasMany(Bid::class, 'user_id', 'user_id');
+//     }
+
+//     public function payments()
+//     {
+//         return $this->hasMany(Payment::class, 'user_id', 'user_id');
+//     }
+
+//     public function purchasedArtworks()
+//     {
+//         return $this->hasMany(Artwork::class, 'buyer_user_id', 'user_id');
+//     }
+// } 
 }
