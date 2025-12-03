@@ -11,7 +11,6 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <Routes>
 
-        {/* Default route */}
         <Route path="/" element={<Navigate to="/home" />} />
 
         <Route path="/home" element={<Home />} />
