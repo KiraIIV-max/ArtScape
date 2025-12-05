@@ -10,6 +10,13 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+    protected $table = 'users';
+
+    protected $primaryKey = 'user_id';
+
+    public $incrementing = true;
+    protected $keyType = 'int';
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
@@ -18,49 +25,81 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
+
+    // Role constants
+    const ROLE_ADMIN = 'admin';
+    const ROLE_ARTIST = 'artist';
+    const ROLE_BUYER = 'buyer';
+
+    // Artist approval status
+    const STATUS_PENDING = 'pending';
+    const STATUS_APPROVED = 'approved';
+    const STATUS_REJECTED = 'rejected';
+
     protected $fillable = [
         'name',
         'email',
         'password',
+        'phone',
         'role',
-        'status',
+        'city',
+        'national_id',
+        'status', // For artist approval status
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'created_at' => 'datetime',
+    ];
+
+    // Check if user is admin
+    public function isAdmin()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->role === self::ROLE_ADMIN;
     }
-// public function bids()
-//     {
-//         return $this->hasMany(Bid::class, 'user_id', 'user_id');
-//     }
 
-//     public function payments()
-//     {
-//         return $this->hasMany(Payment::class, 'user_id', 'user_id');
-//     }
+    // Check if user is artist
+    public function isArtist()
+    {
+        return $this->role === self::ROLE_ARTIST;
+    }
 
-//     public function purchasedArtworks()
-//     {
-//         return $this->hasMany(Artwork::class, 'buyer_user_id', 'user_id');
-//     }
-// } 
+    // Check if user is buyer
+    public function isBuyer()
+    {
+        return $this->role === self::ROLE_BUYER;
+    }
+
+    // Check if artist is approved
+    public function isApproved()
+    {
+        return $this->status === self::STATUS_APPROVED;
+    }
+
+    // Relationships
+    public function artworks()
+    {
+        return $this->hasMany(Artwork::class, 'artist_id', 'user_id');
+    }
+
+    public function bids()
+    {
+        return $this->hasMany(Bid::class, 'user_id', 'user_id');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'user_id', 'user_id');
+    }
+
+    public function purchasedArtworks()
+    {
+        return $this->hasMany(Artwork::class, 'buyer_user_id', 'user_id');
+    }
 }

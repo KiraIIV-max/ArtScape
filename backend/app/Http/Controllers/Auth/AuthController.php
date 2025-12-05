@@ -17,33 +17,36 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'phone_number' => 'required|string|max:20',
+            'phone' => 'required|string|max:20',
             'role' => ['required', Rule::in(['buyer', 'artist'])],
+            'city' => 'required|string|max:255',
+            'national_id' => 'required|string|max:14',
         ]);
 
-        // Buyers are auto-approved, Artists need admin approval
-        $status =  $request->role === 'buyer' ? 'approved' : 'pending';
+        // Buyers auto approved, artists pending
+        $status = $request->role === 'buyer' ? 'approved' : 'pending';
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'phone_number' => $request->phone_number,
-            'role' => $request->role,
-            'status' => $status,
+            'name'        => $request->name,
+            'email'       => $request->email,
+            'password'    => Hash::make($request->password),
+            'phone'       => $request->phone,   // FIXED
+            'role'        => $request->role,
+            'status'      => $status,
+            'city'        => $request->city,    // FIXED
+            'national_id' => $request->national_id, // FIXED
         ]);
 
-        // Only return token if approved (buyers only)
+        // Return token only for approved users (buyers)
         if ($status === 'approved') {
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
                 'access_token' => $token,
-                'token_type' => 'Bearer',
+                'token_type'   => 'Bearer',
             ]);
         }
 
-        // Artist pending approval
         return response()->json([
             'message' => 'Registration submitted. Awaiting admin approval.',
         ], 201);
@@ -52,7 +55,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required',
         ]);
 
@@ -64,7 +67,7 @@ class AuthController extends Controller
             ]);
         }
 
-        // Check approval status (admin always approved)
+        // Only approved non-admins can log in
         if ($user->role !== 'admin' && $user->status !== 'approved') {
             return response()->json([
                 'message' => 'Your account is pending admin approval.',
@@ -75,7 +78,7 @@ class AuthController extends Controller
 
         return response()->json([
             'access_token' => $token,
-            'token_type' => 'Bearer',
+            'token_type'   => 'Bearer',
         ]);
     }
 

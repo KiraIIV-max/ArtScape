@@ -1,0 +1,20 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+public function up()
+{
+    Schema::create('bids', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('auction_id')->constrained('auctions')->onDelete('cascade');
+        $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
+        $table->decimal('amount', 10, 2);
+        $table->dateTime('bid_time');
+        $table->timestamps();
+    });
+}
+};
