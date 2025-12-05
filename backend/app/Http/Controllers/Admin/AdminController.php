@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Artist;
 use App\Models\Artwork;
 use App\Models\Auction;
 use Illuminate\Http\Request;
@@ -62,13 +63,36 @@ class AdminController extends Controller
             ], 400);
         }
 
-        $user->status = User::STATUS_APPROVED;
-        $user->save();
+        DB::beginTransaction();
+        try {
+            // Update user status to approved
+            $user->status = User::STATUS_APPROVED;
+            $user->save();
 
-        return response()->json([
-            'message' => 'Artist registration approved successfully.',
-            'user' => $user
-        ]);
+            // Create artist record in artists table
+            Artist::firstOrCreate(
+                ['user_id' => $user->user_id],
+                [
+                    'bio' => null,
+                    'portfolio_url' => null,
+                    'verification_status' => 'approved',
+                ]
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Artist registration approved successfully.',
+                'user' => $user,
+                'artist' => Artist::where('user_id', $user->user_id)->first()
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to approve artist.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function rejectArtist($userId)
@@ -77,13 +101,27 @@ class AdminController extends Controller
                     ->where('role', User::ROLE_ARTIST)
                     ->firstOrFail();
 
-        $user->status = User::STATUS_REJECTED;
-        $user->save();
+        DB::beginTransaction();
+        try {
+            $user->status = User::STATUS_REJECTED;
+            $user->save();
 
-        return response()->json([
-            'message' => 'Artist registration rejected.',
-            'user' => $user
-        ]);
+            // Delete artist record if exists
+            Artist::where('user_id', $user->user_id)->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Artist registration rejected.',
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to reject artist.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function deleteUser($userId)
