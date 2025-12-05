@@ -53,26 +53,18 @@ class AdminController extends Controller
 
     public function approveArtist($userId)
     {
-        $user = User::where('user_id', $userId)
-                    ->where('role', User::ROLE_ARTIST)
-                    ->firstOrFail();
-
-        if ($user->status === User::STATUS_APPROVED) {
-            return response()->json([
-                'message' => 'Artist is already approved.'
-            ], 400);
-        }
+        $user = User::where('user_id', $userId)->firstOrFail();
 
         DB::beginTransaction();
         try {
-            // Update user status to approved
-            $user->status = User::STATUS_APPROVED;
+            $user->status = 'approved';
             $user->save();
 
-            // Create artist record in artists table
-            Artist::firstOrCreate(
+            // Create or update artist record with user's name
+            $artist = Artist::updateOrCreate(
                 ['user_id' => $user->user_id],
                 [
+                    'name' => $user->name,
                     'bio' => null,
                     'portfolio_url' => null,
                     'verification_status' => 'approved',
@@ -82,9 +74,9 @@ class AdminController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Artist registration approved successfully.',
+                'message' => 'Artist approved successfully.',
                 'user' => $user,
-                'artist' => Artist::where('user_id', $user->user_id)->first()
+                'artist' => $artist
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

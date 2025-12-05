@@ -28,7 +28,7 @@ return new class extends Migration
     {
         Schema::table('artists', function (Blueprint $table) {
             if (Schema::hasColumn('artists', 'user_id')) {
-                $table->dropForeignKeyIfExists(['user_id']);
+                $table->dropForeign(['user_id']);
                 $table->dropColumn('user_id');
             }
             if (Schema::hasColumn('artists', 'verification_status')) {

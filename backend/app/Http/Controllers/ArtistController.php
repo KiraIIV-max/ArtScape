@@ -3,49 +3,166 @@
 namespace App\Http\Controllers;
 
 use App\Models\Artist;
+use App\Models\Artwork;
+use App\Models\Auction;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ArtistController extends Controller
 {
-    // List all artists
-    public function index()
-    {
-        return response()->json(Artist::all());
-    }
+    // ===== ARTWORK CRUD =====
 
-    // Show single artist
-    public function show($id)
+    // Create artwork (only approved artists)
+    public function createArtwork(Request $request)
     {
-        return response()->json(Artist::findOrFail($id));
-    }
+        $user = auth()->user();
+        $artist = Artist::where('user_id', $user->user_id)->firstOrFail();
 
-    // Create new artist
-    public function store(Request $request)
-    {
+        if ($artist->verification_status !== 'approved') {
+            return response()->json(['message' => 'Only approved artists can create artworks'], 403);
+        }
+
         $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'bio' => 'nullable|string',
-            'country' => 'nullable|string|max:100',
-            'birth_date' => 'nullable|date',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'image_url' => 'required|url',
+            'starting_price' => 'required|numeric|min:0',
+            'category_id' => 'required|exists:categories,categorie_id', // Fixed: categorie_id (with 'e')
         ]);
 
-        $artist = Artist::create($validated);
-        return response()->json($artist, 201);
+        $artwork = Artwork::create([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'image_url' => $validated['image_url'],
+            'starting_price' => $validated['starting_price'],
+            'artist_id' => $artist->artist_id,
+            'category_id' => $validated['category_id'],
+            'status' => 'pending',
+        ]);
+
+        return response()->json([
+            'message' => 'Artwork created. Awaiting approval.',
+            'artwork' => $artwork,
+        ], 201);
     }
 
-    // Update artist
-    public function update(Request $request, $id)
+    // List artworks for authenticated artist
+    public function listArtworks()
     {
-        $artist = Artist::findOrFail($id);
-        $artist->update($request->all());
-        return response()->json($artist);
+        $user = auth()->user();
+        $artist = Artist::where('user_id', $user->user_id)->firstOrFail();
+
+        $artworks = Artwork::where('artist_id', $artist->artist_id)->get();
+
+        return response()->json($artworks);
     }
 
-    // Delete artist
-    public function destroy($id)
+    // Update artwork
+    public function updateArtwork(Request $request, $artworkId)
     {
-        Artist::destroy($id);
-        return response()->json(['message' => 'Artist deleted']);
+        $user = auth()->user();
+        $artist = Artist::where('user_id', $user->user_id)->firstOrFail();
+
+        $artwork = Artwork::where('id', $artworkId)
+                          ->where('artist_id', $artist->artist_id)
+                          ->firstOrFail();
+
+        $validated = $request->validate([
+            'title' => 'string|max:255',
+            'description' => 'string',
+            'image_url' => 'url',
+            'starting_price' => 'numeric|min:0',
+        ]);
+
+        $artwork->update($validated);
+
+        return response()->json([
+            'message' => 'Artwork updated.',
+            'artwork' => $artwork,
+        ]);
+    }
+
+    // Delete artwork
+    public function deleteArtwork($artworkId)
+    {
+        $user = auth()->user();
+        $artist = Artist::where('user_id', $user->user_id)->firstOrFail();
+
+        $artwork = Artwork::where('id', $artworkId)
+                          ->where('artist_id', $artist->artist_id)
+                          ->firstOrFail();
+
+        $artwork->delete();
+
+        return response()->json(['message' => 'Artwork deleted']);
+    }
+
+    // ===== AUCTION MANAGEMENT =====
+
+    // Extend auction
+    public function extendAuction(Request $request, $auctionId)
+    {
+        $user = auth()->user();
+        $artist = Artist::where('user_id', $user->user_id)->firstOrFail();
+
+        $auction = Auction::with('artwork')
+                         ->where('auction_id', $auctionId)
+                         ->whereHas('artwork', function ($q) use ($artist) {
+                             $q->where('artist_id', $artist->artist_id);
+                         })
+                         ->firstOrFail();
+
+        if (now() >= $auction->end_date) {
+            return response()->json(['message' => 'Cannot extend auction after end time'], 400);
+        }
+
+        $validated = $request->validate([
+            'hours' => 'required|integer|min:1|max:72',
+        ]);
+
+        $auction->end_date = $auction->end_date->addHours($validated['hours']);
+        $auction->save();
+
+        return response()->json([
+            'message' => 'Auction extended successfully.',
+            'auction' => $auction,
+        ]);
+    }
+
+    // Get auction winner
+    public function getWinner($auctionId)
+    {
+        $user = auth()->user();
+        $artist = Artist::where('user_id', $user->user_id)->firstOrFail();
+
+        $auction = Auction::with('artwork', 'bids')
+                         ->where('auction_id', $auctionId)
+                         ->whereHas('artwork', function ($q) use ($artist) {
+                             $q->where('artist_id', $artist->artist_id);
+                         })
+                         ->firstOrFail();
+
+        if (now() < $auction->end_date) {
+            return response()->json(['message' => 'Auction not ended yet'], 400);
+        }
+
+        $winner = $auction->bids()->orderBy('bid_amount', 'desc')->first();
+
+        if (!$winner) {
+            return response()->json(['message' => 'No bids placed'], 404);
+        }
+
+        $winnerUser = User::find($winner->user_id);
+
+        return response()->json([
+            'message' => 'Auction winner',
+            'winner' => [
+                'user_id' => $winnerUser->user_id,
+                'name' => $winnerUser->name,
+                'email' => $winnerUser->email,
+                'city' => $winnerUser->city,
+                'bid_amount' => $winner->bid_amount,
+            ],
+        ]);
     }
 }
-

@@ -6,15 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-public function up()
-{
-    Schema::create('artists', function (Blueprint $table) {
-        $table->id('artist_id');
-        $table->string('name', 100);
-        $table->text('bio')->nullable();
-        $table->string('country', 100)->nullable();
-        $table->date('birth_date')->nullable();
-        $table->timestamps();
-    });
-}
+    public function up(): void
+    {
+        Schema::create('artists', function (Blueprint $table) {
+            $table->id('artist_id');
+            $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
+            $table->string('name');
+            $table->text('bio')->nullable();
+            $table->string('portfolio_url')->nullable();
+            $table->string('verification_status')->default('pending');
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('artists');
+    }
 };

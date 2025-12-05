@@ -9,9 +9,8 @@ use App\Http\Controllers\BidController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\TagController;
 
-
-Route::post(uri: '/register', action: [AuthController::class, 'register']);
-Route::post(uri: '/login', action: [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::prefix('admin')->group(function () {
@@ -32,11 +31,9 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     });
 });
 
-Route::apiResource('artists', ArtistController::class);
 Route::apiResource('artworks', ArtworkController::class);
 Route::apiResource('auctions', AuctionController::class);
 Route::get('auctions/{id}/winner', [AuctionController::class, 'winner']);
-
 
 Route::get('auctions/{auctionId}/bids', [BidController::class, 'index']);
 Route::post('bids', [BidController::class, 'store']);
@@ -45,4 +42,14 @@ Route::apiResource('payments', PaymentController::class);
 Route::apiResource('tags', TagController::class);
 Route::post('artworks/{id}/tags', [TagController::class, 'assignToArtwork']);
 
+Route::middleware('auth:sanctum')->group(function () {
+    // Artist's artwork management routes
+    Route::post('/artist/artworks', [ArtistController::class, 'createArtwork']);
+    Route::get('/artist/artworks', [ArtistController::class, 'listArtworks']);
+    Route::put('/artist/artworks/{artworkId}', [ArtistController::class, 'updateArtwork']);
+    Route::delete('/artist/artworks/{artworkId}', [ArtistController::class, 'deleteArtwork']);
 
+    // Auction management (for authenticated artists)
+    Route::post('/auctions/{auctionId}/extend', [ArtistController::class, 'extendAuction']);
+    Route::get('/auctions/{auctionId}/winner', [ArtistController::class, 'getWinner']);
+});
