@@ -10,8 +10,6 @@ use Illuminate\Http\Request;
 
 class ArtistController extends Controller
 {
-    // ===== ARTWORK CRUD =====
-
     // Create artwork (only approved artists)
     public function createArtwork(Request $request)
     {
@@ -27,7 +25,7 @@ class ArtistController extends Controller
             'description' => 'required|string',
             'image_url' => 'required|url',
             'starting_price' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:categories,categorie_id', // Fixed: categorie_id (with 'e')
+            'category_id' => 'required|exists:categories,category_id',
         ]);
 
         $artwork = Artwork::create([
@@ -41,12 +39,12 @@ class ArtistController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Artwork created. Awaiting approval.',
+            'message' => 'Artwork created. Awaiting admin approval.',
             'artwork' => $artwork,
         ], 201);
     }
 
-    // List artworks for authenticated artist
+    // List all artworks for authenticated artist (including pending)
     public function listArtworks()
     {
         $user = auth()->user();
@@ -54,7 +52,10 @@ class ArtistController extends Controller
 
         $artworks = Artwork::where('artist_id', $artist->artist_id)->get();
 
-        return response()->json($artworks);
+        return response()->json([
+            'message' => 'Your artworks',
+            'artworks' => $artworks,
+        ]);
     }
 
     // Update artwork
@@ -63,7 +64,7 @@ class ArtistController extends Controller
         $user = auth()->user();
         $artist = Artist::where('user_id', $user->user_id)->firstOrFail();
 
-        $artwork = Artwork::where('id', $artworkId)
+        $artwork = Artwork::where('artwork_id', $artworkId)
                           ->where('artist_id', $artist->artist_id)
                           ->firstOrFail();
 
@@ -88,7 +89,7 @@ class ArtistController extends Controller
         $user = auth()->user();
         $artist = Artist::where('user_id', $user->user_id)->firstOrFail();
 
-        $artwork = Artwork::where('id', $artworkId)
+        $artwork = Artwork::where('artwork_id', $artworkId)
                           ->where('artist_id', $artist->artist_id)
                           ->firstOrFail();
 
@@ -97,9 +98,7 @@ class ArtistController extends Controller
         return response()->json(['message' => 'Artwork deleted']);
     }
 
-    // ===== AUCTION MANAGEMENT =====
-
-    // Extend auction
+    // Extend auction time (only before auction end)
     public function extendAuction(Request $request, $auctionId)
     {
         $user = auth()->user();
@@ -129,7 +128,7 @@ class ArtistController extends Controller
         ]);
     }
 
-    // Get auction winner
+    // View winner bidder (only after auction end)
     public function getWinner($auctionId)
     {
         $user = auth()->user();

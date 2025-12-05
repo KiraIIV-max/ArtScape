@@ -8,6 +8,8 @@ use App\Http\Controllers\AuctionController;
 use App\Http\Controllers\BidController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\TagController;
+use Illuminate\Http\Request;
+use App\Http\Controllers\BuyerController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -44,12 +46,29 @@ Route::post('artworks/{id}/tags', [TagController::class, 'assignToArtwork']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // Artist's artwork management routes
-    Route::post('/artist/artworks', [ArtistController::class, 'createArtwork']);
+    Route::post('/artworks', [ArtistController::class, 'createArtwork']);
     Route::get('/artist/artworks', [ArtistController::class, 'listArtworks']);
-    Route::put('/artist/artworks/{artworkId}', [ArtistController::class, 'updateArtwork']);
-    Route::delete('/artist/artworks/{artworkId}', [ArtistController::class, 'deleteArtwork']);
+    Route::put('/artworks/{artworkId}', [ArtistController::class, 'updateArtwork']);
+    Route::delete('/artworks/{artworkId}', [ArtistController::class, 'deleteArtwork']);
 
     // Auction management (for authenticated artists)
     Route::post('/auctions/{auctionId}/extend', [ArtistController::class, 'extendAuction']);
     Route::get('/auctions/{auctionId}/winner', [ArtistController::class, 'getWinner']);
+});
+
+// ===== BUYER ROUTES (Public) =====
+Route::get('/artworks', [BuyerController::class, 'browseArtworks']);
+Route::get('/artworks/{artworkId}', [BuyerController::class, 'showArtwork']);
+Route::get('/artworks/{artworkId}/bids', [BuyerController::class, 'getArtworkBidHistory']);
+Route::get('/artworks/artist/{artistId}', [BuyerController::class, 'getArtworksByArtist']);
+Route::get('/artworks/category/{categoryId}', [BuyerController::class, 'getArtworksByCategory']);
+Route::get('/search', [BuyerController::class, 'searchArtworks']);
+// Route::get('/trending', [BuyerController::class, 'getTrendingArtworks']);
+
+// ===== ADMIN ROUTES =====
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/admin/artists/{userId}/approve', [AdminController::class, 'approveArtist']);
+    Route::post('/admin/artists/{userId}/reject', [AdminController::class, 'rejectArtist']);
+    Route::post('/admin/artworks/{artworkId}/approve', [AdminController::class, 'approveArtwork']);
+    Route::post('/admin/artworks/{artworkId}/reject', [AdminController::class, 'rejectArtwork']);
 });

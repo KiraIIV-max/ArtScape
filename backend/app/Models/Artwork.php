@@ -12,10 +12,12 @@ class Artwork extends Model
 
     protected $table = 'artworks';
 
-    protected $primaryKey = 'id'; // Changed from 'artwork_id' to 'id'
+    protected $primaryKey = 'artwork_id'; // Changed back to 'artwork_id'
 
     public $incrementing = true;
     protected $keyType = 'int';
+
+    public $timestamps = true;
 
     protected $fillable = [
         'title',
@@ -27,21 +29,25 @@ class Artwork extends Model
         'status',
     ];
 
+    // Relationship with Artist
     public function artist()
     {
         return $this->belongsTo(Artist::class, 'artist_id', 'artist_id');
     }
 
+    // Relationship with Category
     public function category()
     {
-        return $this->belongsTo(Category::class, 'category_id', 'categorie_id');
+        return $this->belongsTo(Category::class, 'category_id', 'category_id');
     }
 
+    // Relationship with Auction
     public function auction()
     {
-        return $this->hasOne(Auction::class, 'artwork_id', 'id');
+        return $this->hasOne(Auction::class, 'artwork_id', 'artwork_id');
     }
 
+    // Relationship with Tags
     public function tags()
     {
         return $this->belongsToMany(Tag::class, 'artwork_tags', 'artwork_id', 'tag_id');
