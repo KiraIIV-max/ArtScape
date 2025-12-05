@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Auction extends Model
 {
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_CLOSED = 'closed';
+    public const STATUS_ENDED = 'ended';
+    public const STATUS_PENDING = 'pending';
+
     protected $table = 'auctions';
 
     protected $primaryKey = 'auction_id';
@@ -15,12 +20,12 @@ class Auction extends Model
 
 
     protected $fillable = [
+        'artwork_id',
+        'starting_bid',
+        'current_bid',
+        'status',
         'start_date',
         'end_date',
-        'starting_bid',
-        'current_highest_bid',
-        'status',
-        'artwork_id',
     ];
 
     public function artwork()

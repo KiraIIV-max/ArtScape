@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Artwork extends Model
 {
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_REJECTED = 'rejected';
+
     protected $table = 'artworks';
 
     protected $primaryKey = 'artwork_id';
@@ -19,10 +23,9 @@ class Artwork extends Model
         'description',
         'image_url',
         'starting_price',
-        'created_at',
-        'buyer_user_id',
         'artist_id',
-        'categorie_id',
+        'category_id',
+        'status',
     ];
 
     public function artist()
