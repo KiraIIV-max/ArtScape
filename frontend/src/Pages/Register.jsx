@@ -4,12 +4,12 @@ import Navbar from "../components/Navbar";
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-// import axios from "axios";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const Register = () => {
   const container = useRef();
+
 
   useEffect(() => {
     let ctx = gsap.context(() => {
@@ -41,66 +41,12 @@ const Register = () => {
     el5.classList.add("hidden");
   };
 
-  // const handleRegister = (e) => {
-  //   e.preventDefault();
-
-  //   const fullname = e.target.fullname.value;
-  //   const email = e.target.email.value;
-  //   const password = e.target.password.value;
-
-  //   axios
-  //     .post("http://localhost/php-api/register.php", {
-  //       fullname,
-  //       email,
-  //       password,
-  //     })
-  //     .then((res) => {
-  //       console.log(res.data);
-
-  //       if (res.data.status === "success") {
-  //         setSuccessMsg(res.data.message);
-  //         setErrorMsg("");
-  //         e.target.reset();
-  //       } else if (res.data.status === "error") {
-  //         setErrorMsg(res.data.errors.join(" | "));
-  //         setSuccessMsg("");
-  //       }
-  //     })
-  //     .catch(() => {
-  //       setErrorMsg("Something went wrong. Try again.");
-  //       setSuccessMsg("");
-  //     });
-  // };
-
-  // const handleLogin = (e) => {
-  //   e.preventDefault();
-
-  //   const email = e.target.email.value;
-  //   const password = e.target.password.value;
-
-  //   axios
-  //     .post("http://localhost/php-api/login.php", { email, password })
-  //     .then((res) => {
-  //       if (res.data.status === "success") {
-  //         setSuccessMsg(res.data.message);
-  //         setErrorMsg("");
-  //         e.target.reset();
-  //       } else if (res.data.status === "error") {
-  //         setErrorMsg(res.data.errors.join(" | "));
-  //         setSuccessMsg("");
-  //       }
-  //     })
-  //     .catch(() => {
-  //       setErrorMsg("Something went wrong. Try again.");
-  //       setSuccessMsg("");
-  //     });
-  // };
 
   return (
     <>
       <section
         ref={container}
-        className="ml-10  gap-10 items-center justify-center h-screen flex-row flex"
+        className="ml-10 gap-10 items-center justify-center h-screen flex-row flex"
       >
         <div className="mx-20 my-8">
           <div className="pb-14">
@@ -114,8 +60,9 @@ const Register = () => {
               Universe
             </h1>
           </div>
+
           <div>
-            <p className=" uppercase font-serif text-gray-500 text-sm ">
+            <p className="uppercase font-serif text-gray-500 text-sm">
               start for free
             </p>
             <h1 className="text-5xl pb-3 font-serif">
@@ -124,58 +71,111 @@ const Register = () => {
             </h1>
             <p className="uppercase text-gray-500 text-sm">
               Already have an account?{" "}
-              <span className=" text-blue-600">Log In</span>
+              <span
+                onClick={handlelayout}
+                id="layout5"
+                className="cursor-pointer text-blue-600"
+              >
+                Log In
+              </span>
             </p>
           </div>
-          <form className="w-full flex flex-col gap-7 mt-10">
+
+          {/* register Form */}
+          <form id="layout2" className="w-full flex flex-col gap-5 mt-6">
+            <select
+              className="w-fit m-auto bg-gray-200 rounded-xl px-4 py-2"
+              name="role"
+              id="role"
+            >
+              <option value="" disabled selected>
+                Choose role
+              </option>
+              <option value="Artist">Artist</option>
+              <option value="buyer">buyer</option>
+            </select>
             <label className=" text-black font-semibold">
               Name{" "}
               <input
                 placeholder="Enter your name"
                 required
                 type="text"
-                name="name"
-                className="block rounded-full w-xl ml-3 px-10 py-3 bg-gray-200"
+                name="fullname"
+                className=" block rounded-full w-xl ml-3 px-10 py-3 bg-gray-200"
               />
             </label>
-            <label className=" text-black font-semibold">
-              email{" "}
+
+            <label className="text-black font-semibold">
+              Email{" "}
               <input
                 placeholder="Enter your email"
                 required
                 type="email"
-                name="name"
+                name="email"
                 className="block rounded-full w-xl ml-3 px-10 py-3 bg-gray-200"
               />
             </label>
-            <label className=" text-black font-semibold">
-              password{" "}
+
+            <label className="text-black font-semibold">
+              Password{" "}
               <input
                 placeholder="Set a password"
                 required
                 type="password"
-                name="name"
+                name="password"
                 className="block rounded-full w-xl ml-3 px-10 py-3 bg-gray-200"
               />
             </label>
-            <div className=" ml-28 flex gap-20">
-              <button className=" cursor-pointer text-xl w-fit transation duration-300 ease-in-out  group hover:-translate-y-1.5 hover:scale-105 mt-8 z-20 ml-5 px-4 py-2 text-white  relative overflow-hidden">
-                Log in
-                <span className="absolute left-0 bottom-0 rounded-full  w-full bg-blue-600 -z-10 h-full transition-all duration-500 ease-in-out"></span>
-              </button>
-              <button className="cursor-pointer  text-xl w-fit transation duration-300 ease-in-out  group hover:-translate-y-1.5 hover:scale-105 mt-8 z-20 ml-5 px-4 py-2 text-white  relative overflow-hidden">
-                create account
-                <span className="absolute left-0 bottom-0 rounded-full  w-full bg-blue-600 -z-10 h-full transition-all duration-500 ease-in-out"></span>
-              </button>
-            </div>
+
+            <button
+              type="submit"
+              className="cursor-pointer text-xl w-fit transition duration-300 ease-in-out group hover:-translate-y-1.5 hover:scale-105 ml-52 mt-4 z-20  px-4 py-2 text-white relative overflow-hidden"
+            >
+              Create account
+              <span className="absolute left-0 bottom-0 rounded-full w-full bg-blue-600 -z-10 h-full transition-all duration-500 ease-in-out"></span>
+            </button>
+          </form>
+
+          {/* Login Form */}
+          <form
+            id="layout"
+            className=" hidden w-full flex flex-col gap-7 mt-10"
+          >
+            <label className="text-black font-semibold">
+              Email
+              <input
+                placeholder="Enter your email"
+                required
+                type="email"
+                name="email"
+                className="block rounded-full w-xl ml-3 px-10 py-3 bg-gray-200"
+              />
+            </label>
+
+            <label className="text-black font-semibold">
+              Password
+              <input
+                placeholder="Enter your password"
+                required
+                type="password"
+                name="password"
+                className="block rounded-full w-xl ml-3 px-10 py-3 bg-gray-200"
+              />
+            </label>
+
+            <button className=" ml-52 cursor-pointer text-xl w-fit transition duration-300 ease-in-out group hover:-translate-y-1.5 hover:scale-105 mt-8 z-20  px-4 py-2 text-white relative overflow-hidden">
+              Log in
+              <span className="absolute left-0 bottom-0 rounded-full w-full bg-blue-600 -z-10 h-full transition-all duration-500 ease-in-out"></span>
+            </button>
           </form>
         </div>
-        <div className="  ">
-          <span className=" absolute top-0 right-0 -z-10 bg-slate-50 w-1/2 h-full"></span>
+
+        <div>
+          <span className="absolute top-0 right-0 -z-10 bg-slate-50 w-1/2 h-full"></span>
           <img
             src={img}
             alt="art"
-            className=" reg-item w-full h-full object-cover"
+            className="reg-item w-full h-full object-cover"
           />
         </div>
       </section>

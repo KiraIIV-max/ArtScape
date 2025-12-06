@@ -57,6 +57,7 @@ const Landing = () => {
           transation: "background-size 2s ease-in-out",
         }}
       >
+        <Navbar />
         <div
           id="overlay"
           className="fixed top-0 left-0 w-full h-full bg-black/60 backdrop-blur-3xl z-50"
