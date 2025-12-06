@@ -5,14 +5,17 @@ import "./index.css";
 import Register from "./Pages/Register.jsx";
 import Upload from "./Pages/Upload.jsx";
 import Navbar from "./components/Navbar.jsx";
+import App from "./App.jsx";
+import Landing from "./Pages/Landing.jsx";
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Navigate to="/home" />} />
+        <Route path="/" element={<Landing />} />
 
-        <Route path="/home" element={<Home />} />
+        <Route path="/app" element={<App />} />
         <Route path="/register" element={<Register />} />
         <Route path="/upload" element={<Upload />} />
       </Routes>
