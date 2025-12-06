@@ -6,24 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up(): void
-    {
-        Schema::create('auctions', function (Blueprint $table) {
-            $table->id('auction_id');
-            $table->unsignedBigInteger('artwork_id');
-            $table->decimal('starting_bid', 10, 2);
-            $table->decimal('current_bid', 10, 2)->nullable();
-            $table->string('status')->default('pending');
-            $table->dateTime('start_date');
-            $table->dateTime('end_date');
-            $table->timestamps();
-
-            $table->foreign('artwork_id')->references('artwork_id')->on('artworks')->onDelete('cascade');
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('auctions');
-    }
+public function up()
+{
+    Schema::create('auctions', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('artwork_id')->constrained('artworks')->onDelete('cascade');
+        $table->dateTime('start_date');
+        $table->dateTime('end_date');
+        $table->decimal('starting_bid', 10, 2);
+        $table->decimal('current_highest_bid', 10, 2)->nullable();
+        $table->string('status', 20)->default('active');
+        $table->timestamps();
+    });
+}
 };

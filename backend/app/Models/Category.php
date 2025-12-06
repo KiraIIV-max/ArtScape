@@ -8,20 +8,15 @@ class Category extends Model
 {
     protected $table = 'categories';
 
-    protected $primaryKey = 'category_id';
+    protected $primaryKey = 'categorie_id';
 
     public $incrementing = true;
-    public $timestamps = true;
-
     protected $keyType = 'int';
 
-    protected $fillable = [
-        'name',
-        'description',
-    ];
+    protected $fillable = ['name'];
 
     public function artworks()
     {
-        return $this->hasMany(Artwork::class, 'category_id', 'category_id');
+        return $this->hasMany(Artwork::class, 'categorie_id');
     }
 }
