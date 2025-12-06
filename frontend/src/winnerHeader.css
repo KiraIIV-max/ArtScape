@@ -1,0 +1,17 @@
+.winnerHeader {
+  --dotSize: 0.04rem;
+  --bgSize: 0.35rem;
+  --bgPosition: calc(var(--bgSize) / 2);
+  background-image: radial-gradient(
+      circle at center,
+      #818181 var(--dotSize),
+      #fff0 0
+    ),
+    radial-gradient(circle at center, #7e7e7e var(--dotSize), #000 0);
+  background-size: var(--bgSize) var(--bgSize);
+  background-position: 0 0, var(--bgPosition) var(--bgPosition);
+  font-family: mono;
+  font-weight: bolder;
+  stroke: white;
+  font-size: 0.5rem;
+}

@@ -8,7 +8,7 @@ import Why from "../components/Why.jsx";
 import Offer from "../components/Offer.jsx";
 import Footer from "../components/Footer.jsx";
 
-const Home = () => {
+const Landing = () => {
   useEffect(() => {
     const tl = gsap.timeline();
     tl.to("#overlay", {
@@ -62,7 +62,6 @@ const Home = () => {
           className="fixed top-0 left-0 w-full h-full bg-black/60 backdrop-blur-3xl z-50"
         ></div>
 
-        <Navbar />
         <div
           id="hero-text"
           className=" px-16 transition duration-850 ease-in-out ml-6 absolute top-1/3 uppercase z-50"
@@ -77,13 +76,13 @@ const Home = () => {
           </button>
         </div>
       </section>
-      <Features/>
-      <BestSeller/>
-      <Why/>
-      <Offer/>
-      <Footer/>
+      <Features />
+      <BestSeller />
+      <Why />
+      <Offer />
+      <Footer />
     </>
   );
 };
 
-export default Home;
+export default Landing;
