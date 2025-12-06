@@ -2,182 +2,272 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Models\Artist;
 use App\Models\Artwork;
-use App\Models\User;
+use App\Models\Auction;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
+use Exception;
 
 class AdminController extends Controller
 {
-    public function listUsers(Request $request)
+    public function listUsers(Request  $request)
     {
-        $query = User::query();
+         $query = User::query();
 
-        if ($request->has('role')) {
-            $query->where('role', $request->role);
+        if ( $request->has('role')) {
+             $query->where('role',  $request->role);
         }
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        if ( $request->has('status')) {
+             $query->where('status',  $request->status);
         }
 
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+        if ( $request->has('search')) {
+             $search =  $request->search;
+
+            $query->where(function($q) use ( $search) {
+                $q->where('name', 'like', "% $search%")
+                  ->orWhere('email', 'like', "% $search%");
             });
         }
 
-        $users = $query->orderBy('created_at', 'desc')
-                       ->paginate($request->per_page ?? 15);
+         $users =  $query->orderBy('created_at', 'desc')
+                       ->paginate( $request->per_page ?? 15);
 
-        return response()->json($users);
+        return response()->json( $users);
     }
 
-    // Approve artist registration
-    public function approveArtist($userId)
+    public function getPendingArtists()
     {
-        $artist = Artist::where('user_id', $userId)->firstOrFail();
-
-        if ($artist->verification_status === 'approved') {
-            return response()->json(['message' => 'Artist already approved'], 400);
-        }
-
-        $artist->verification_status = 'approved';
-        $artist->save();
+         $pendingArtists = User::where('role', User::ROLE_ARTIST)
+            ->where('status', User::STATUS_PENDING)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return response()->json([
-            'message' => 'Artist approved successfully',
-            'artist' => $artist,
+            'count' =>  $pendingArtists->count(),
+            'artists' =>  $pendingArtists
         ]);
     }
 
-    // Reject artist registration
-    public function rejectArtist($userId)
+    public function approveArtist( $userId)
     {
-        $artist = Artist::where('user_id', $userId)->firstOrFail();
-
-        $artist->verification_status = 'rejected';
-        $artist->save();
-
-        return response()->json([
-            'message' => 'Artist rejected',
-            'artist' => $artist,
-        ]);
-    }
-
-    public function deleteUser($userId)
-    {
-        $user = User::where('user_id', $userId)->firstOrFail();
-
-        if ($user->isAdmin()) {
-            return response()->json([
-                'message' => 'Cannot delete admin accounts.'
-            ], 403);
-        }
+         $user = User::where('user_id',  $userId)->firstOrFail();
 
         DB::beginTransaction();
         try {
-            if ($user->isArtist()) {
-                $artworkIds = $user->artworks()->pluck('artwork_id');
+             $user->status = User::STATUS_APPROVED;
+             $user->save();
 
-                Auction::whereIn('artwork_id', $artworkIds)->each(function($auction) {
-                    $auction->bids()->delete();
-                    $auction->payments()->delete();
-                    $auction->delete();
-                });
+            Artist::updateOrCreate(
+                ['user_id' =>  $user->user_id],
+                [
+                    'name' =>  $user->name,
+                    'bio' => null,
+                    'portfolio_url' => null,
+                    'verification_status' => 'approved',
+                ]
+            );
 
-                $user->artworks()->delete();
-            }
-
-            if ($user->isBuyer()) {
-                $user->bids()->delete();
-                $user->payments()->delete();
-            }
-
-            $user->delete();
             DB::commit();
 
             return response()->json([
-                'message' => 'User deleted successfully.'
+                'message' => 'Artist approved successfully.',
+                'user' =>  $user
             ]);
-        } catch (\Exception $e) {
+
+        } catch (Exception  $e) {
             DB::rollBack();
             return response()->json([
-                'message' => 'Failed to delete user.',
-                'error' => $e->getMessage()
+                'message' => 'Failed to approve artist.',
+                'error' =>  $e->getMessage()
             ], 500);
         }
     }
 
-    // Approve artwork (makes it visible to buyers)
-    public function approveArtwork($artworkId)
+    public function rejectArtist( $userId)
     {
-        $artwork = Artwork::findOrFail($artworkId);
+         $user = User::where('user_id',  $userId)
+                    ->where('role', User::ROLE_ARTIST)
+                    ->firstOrFail();
 
-        if ($artwork->status === 'approved') {
-            return response()->json(['message' => 'Artwork already approved'], 400);
+        DB::beginTransaction();
+        try {
+             $user->status = User::STATUS_REJECTED;
+             $user->save();
+
+            Artist::where('user_id',  $user->user_id)->delete();
+
+            DB::commit();
+
+            return response()->json(['message' => 'Artist registration rejected.']);
+
+        } catch (Exception  $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to reject artist.',
+                'error' =>  $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteUser( $userId)
+    {
+         $user = User::where('user_id',  $userId)->firstOrFail();
+
+        if ( $user->isAdmin()) {
+            return response()->json(['message' => 'Cannot delete admin accounts.'], 403);
         }
 
-        $artwork->status = 'approved';
-        $artwork->save();
+        DB::beginTransaction();
+        try {
+            if ( $user->isArtist()) {
+                 $artist =  $user->artistProfile;
+                if ( $artist) {
+                     $artworks =  $artist->artworks;
+
+                    foreach ( $artworks as  $art) {
+                        foreach ( $art->auction as  $auction) {
+                             $auction->bids()->delete();
+                             $auction->payments()->delete();
+                             $auction->delete();
+                        }
+
+                         $art->tags()->detach();
+                         $art->delete();
+                    }
+
+                     $artist->delete();
+                }
+            }
+
+            if ( $user->isBuyer()) {
+                 $user->bids()->delete();
+                 $user->payments()->delete();
+            }
+
+             $user->delete();
+
+            DB::commit();
+
+            return response()->json(['message' => 'User deleted successfully.']);
+
+        } catch (Exception  $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to delete user.',
+                'error' =>  $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getPendingArtworks()
+    {
+         $pendingArtworks = Artwork::with(['artist', 'category', 'tags'])
+            ->where('status', Artwork::STATUS_PENDING)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return response()->json([
-            'message' => 'Artwork approved successfully',
-            'artwork' => $artwork,
+            'count' =>  $pendingArtworks->count(),
+            'artworks' =>  $pendingArtworks
         ]);
     }
 
-    // Reject artwork
-    public function rejectArtwork($artworkId)
+    public function listArtworks(Request  $request)
     {
-        $artwork = Artwork::findOrFail($artworkId);
+         $query = Artwork::with(['artist', 'category', 'tags', 'auction']);
 
-        $artwork->status = 'rejected';
-        $artwork->save();
-
-        return response()->json([
-            'message' => 'Artwork rejected',
-            'artwork' => $artwork,
-        ]);
-    }
-
-    // Get pending artworks for moderation
-    public function getPendingArtworks(Request $request)
-    {
-        $query = Artwork::where('status', 'pending');
-
-        if ($request->has('category_id')) {
-            $query->where('category_id', $request->category_id);
+        if ( $request->has('status')) {
+             $query->where('status',  $request->status);
         }
 
-        $artworks = $query->with('artist', 'category')->paginate(15);
+        if ( $request->has('artist_id')) {
+             $query->where('artist_id',  $request->artist_id);
+        }
 
-        return response()->json($artworks);
+        if ( $request->has('category_id')) {
+             $query->where('category_id',  $request->category_id);
+        }
+
+        if ( $request->has('search')) {
+             $search =  $request->search;
+
+            $query->where(function($q) use ( $search) {
+                $q->where('title', 'like', "% $search%")
+                  ->orWhere('description', 'like', "% $search%");
+            });
+        }
+
+         $artworks =  $query->orderBy('created_at', 'desc')
+                          ->paginate( $request->per_page ?? 15);
+
+        return response()->json( $artworks);
     }
 
-    // Get pending artists for approval
-    public function getPendingArtists()
+    public function approveArtwork( $artworkId)
     {
-        $artists = Artist::where('verification_status', 'pending')
-                        ->with('user')
-                        ->paginate(15);
+        $artwork = Artwork::findOrFail( $artworkId);
 
-        return response()->json($artists);
-    }
+        if ( $artwork->status === Artwork::STATUS_APPROVED) {
+            return response()->json(['message' => 'Artwork is already approved.'], 400);
+        }
 
-    // Dashboard statistics
-    public function getDashboardStats()
-    {
+         $artwork->update(['status' => Artwork::STATUS_APPROVED]);
+
         return response()->json([
-            'total_artists' => Artist::count(),
-            'approved_artists' => Artist::where('verification_status', 'approved')->count(),
-            'pending_artists' => Artist::where('verification_status', 'pending')->count(),
-            'total_artworks' => Artwork::count(),
-            'approved_artworks' => Artwork::where('status', 'approved')->count(),
-            'pending_artworks' => Artwork::where('status', 'pending')->count(),
+            'message' => 'Artwork approved successfully.',
+            'artwork' =>  $artwork->load(['artist', 'category', 'tags'])
         ]);
     }
-}
+
+    public function rejectArtwork( $artworkId)
+    {
+        $artwork = Artwork::findOrFail( $artworkId);
+         $artwork->update(['status' => Artwork::STATUS_REJECTED]);
+
+        return response()->json([
+            'message' => 'Artwork rejected.',
+            'artwork' =>  $artwork
+        ]);
+    }
+
+public function deleteArtwork($artworkId)
+{
+    $artwork = Artwork::find($artworkId);
+
+    if (!$artwork) {
+        return response()->json(['message' => 'Artwork not found'], 404);
+    }
+
+    DB::beginTransaction();
+    try {
+        // Use correct relationship name: auctions()
+        if ($artwork->auctions && $artwork->auctions->count() > 0) {
+            foreach ($artwork->auctions as $auction) {
+                if ($auction) {
+                    $auction->bids()->delete();
+                    $auction->payments()->delete();
+                    $auction->delete();
+                }
+            }
+        }
+
+        $artwork->tags()->detach();
+        $artwork->delete();
+
+        DB::commit();
+
+        return response()->json(['message' => 'Artwork deleted successfully.']);
+
+    } catch (Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'message' => 'Failed to delete artwork.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}}
