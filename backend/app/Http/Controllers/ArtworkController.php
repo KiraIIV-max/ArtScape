@@ -9,8 +9,7 @@ class ArtworkController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Artwork::query();
-
+        $query = Artwork::where('status', Artwork::STATUS_APPROVED);
         if ($request->has('artist_id')) {
             $query->where('artist_id', $request->artist_id);
         }

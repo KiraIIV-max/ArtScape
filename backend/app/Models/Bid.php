@@ -8,11 +8,11 @@ class Bid extends Model
 {
     protected $table = 'bids';
 
-    protected $primaryKey = 'bid_id';
+    // FIX: your table uses "id", not "bid_id"
+    protected $primaryKey = 'id';
 
     public $incrementing = true;
     protected $keyType = 'int';
-
 
     protected $fillable = [
         'amount',
@@ -23,11 +23,11 @@ class Bid extends Model
 
     public function auction()
     {
-        return $this->belongsTo(Auction::class);
+        return $this->belongsTo(Auction::class, 'auction_id');
     }
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 }
