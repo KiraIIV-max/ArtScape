@@ -1,9 +1,11 @@
 import img from "../../src/assets/clip-message-sent 1.png";
 import Photoroom from "../../src/assets/1-2Photoroom.png";
 import Navbar from "../components/Navbar";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+// import axios from "axios";
+
 gsap.registerPlugin(ScrollTrigger);
 
 const Register = () => {
@@ -22,6 +24,77 @@ const Register = () => {
 
     return () => ctx.revert();
   }, []);
+
+  const handlelayout = () => {
+    const el1 = document.getElementById("layout");
+    el1.classList.remove("hidden");
+    const el2 = document.getElementById("layout2");
+    el2.classList.add("hidden");
+
+    const el3 = document.getElementById("layout3");
+    el3.classList.add("hidden");
+
+    const el4 = document.getElementById("layout4");
+    el4.classList.remove("opacity-0");
+    el4.classList.add("ml-32");
+    const el5 = document.getElementById("layout5");
+    el5.classList.add("hidden");
+  };
+
+  // const handleRegister = (e) => {
+  //   e.preventDefault();
+
+  //   const fullname = e.target.fullname.value;
+  //   const email = e.target.email.value;
+  //   const password = e.target.password.value;
+
+  //   axios
+  //     .post("http://localhost/php-api/register.php", {
+  //       fullname,
+  //       email,
+  //       password,
+  //     })
+  //     .then((res) => {
+  //       console.log(res.data);
+
+  //       if (res.data.status === "success") {
+  //         setSuccessMsg(res.data.message);
+  //         setErrorMsg("");
+  //         e.target.reset();
+  //       } else if (res.data.status === "error") {
+  //         setErrorMsg(res.data.errors.join(" | "));
+  //         setSuccessMsg("");
+  //       }
+  //     })
+  //     .catch(() => {
+  //       setErrorMsg("Something went wrong. Try again.");
+  //       setSuccessMsg("");
+  //     });
+  // };
+
+  // const handleLogin = (e) => {
+  //   e.preventDefault();
+
+  //   const email = e.target.email.value;
+  //   const password = e.target.password.value;
+
+  //   axios
+  //     .post("http://localhost/php-api/login.php", { email, password })
+  //     .then((res) => {
+  //       if (res.data.status === "success") {
+  //         setSuccessMsg(res.data.message);
+  //         setErrorMsg("");
+  //         e.target.reset();
+  //       } else if (res.data.status === "error") {
+  //         setErrorMsg(res.data.errors.join(" | "));
+  //         setSuccessMsg("");
+  //       }
+  //     })
+  //     .catch(() => {
+  //       setErrorMsg("Something went wrong. Try again.");
+  //       setSuccessMsg("");
+  //     });
+  // };
 
   return (
     <>
