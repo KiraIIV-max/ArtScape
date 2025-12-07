@@ -4,9 +4,12 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import "./index.css";
 import Register from "./Pages/Register.jsx";
 import Upload from "./Pages/Upload.jsx";
+import Admin from "./Pages/Admin.jsx";
 import Navbar from "./components/Navbar.jsx";
-import App from "./App.jsx";
+import Bid from "./Bid.jsx";
 import Landing from "./Pages/Landing.jsx";
+import Buyer from "./Pages/Buyer.jsx";
+import Artist from "./Pages/Artist.jsx";
 
 function Layout() {
   const location = useLocation();
@@ -21,9 +24,12 @@ function Layout() {
       {!hideNavbar && <Navbar />}
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/app" element={<App />} />
+        <Route path="/bid" element={<Bid />} />
         <Route path="/register" element={<Register />} />
         <Route path="/upload" element={<Upload />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/artist" element={<Artist />} />
+        <Route path="/buyer" element={<Buyer />} />
       </Routes>
     </>
   );

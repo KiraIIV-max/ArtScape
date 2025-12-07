@@ -2,7 +2,7 @@ import { Carousel } from "./components/Carousel";
 import { MdOutlineCalendarMonth } from "react-icons/md";
 import "./winnerHeader.css";
 
-export default function App() {
+export default function Bid() {
   function renderCarouselElement(data, inFocus) {
     return (
       <div>

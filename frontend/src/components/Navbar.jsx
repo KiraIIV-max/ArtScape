@@ -8,7 +8,7 @@ function Navbar() {
   const location = useLocation();
 
   useEffect(() => {
-    if (location.pathname !== "/") return; // only animate on home
+    if (location.pathname !== "/") return;
     const tl = gsap.timeline();
     tl.to("#nav_ani", {
       opacity: 1,
