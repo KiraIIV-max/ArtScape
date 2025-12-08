@@ -70,7 +70,6 @@ const Register = () => {
   const handleRegisterChange = (e) => {
     const { name, value } = e.target;
     setRegisterData((prev) => ({ ...prev, [name]: value }));
-    // Clear specific error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -147,6 +146,19 @@ const Register = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const saveAuth = (data) => {
+    // Normalize keys for Bid.jsx compatibility
+    localStorage.setItem("auth_token", data.access_token);
+    localStorage.setItem("token_type", data.token_type || "Bearer");
+    if (data.user) {
+      localStorage.setItem("user", JSON.stringify(data.user));
+    }
+    // Remove old key if it exists
+    localStorage.removeItem("token");
+    // Notify listeners (e.g., Navbar) that auth changed
+    window.dispatchEvent(new Event("auth-changed"));
+  };
+
   // Handle Register Submit
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
@@ -171,8 +183,7 @@ const Register = () => {
       if (response.ok) {
         if (data.access_token) {
           // Buyer - auto approved, save token and redirect
-          localStorage.setItem("token", data.access_token);
-          localStorage.setItem("user", JSON.stringify(data.user));
+          saveAuth(data);
           setMessage({
             type: "success",
             text: "Registration successful! Redirecting...",
@@ -182,7 +193,9 @@ const Register = () => {
           // Artist - pending approval
           setMessage({
             type: "info",
-            text: data.message || "Registration submitted! Please wait for admin approval.",
+            text:
+              data.message ||
+              "Registration submitted! Please wait for admin approval.",
           });
           // Clear form
           setRegisterData({
@@ -197,7 +210,6 @@ const Register = () => {
           });
         }
       } else {
-        // Handle validation errors from server
         if (data.errors) {
           setErrors(data.errors);
           setMessage({
@@ -245,28 +257,22 @@ const Register = () => {
 
       if (response.ok) {
         // Save token and user data
-        localStorage.setItem("token", data.access_token);
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-        }
+        saveAuth(data);
 
         setMessage({
           type: "success",
           text: "Login successful! Redirecting...",
         });
 
-        // Redirect based on role (you can adjust this)
         setTimeout(() => {
           navigate("/");
         }, 1000);
       } else if (response.status === 403) {
-        // Account pending approval
         setMessage({
           type: "warning",
           text: data.message || "Your account is pending admin approval.",
         });
       } else if (response.status === 422) {
-        // Validation error (wrong credentials)
         setMessage({
           type: "error",
           text: data.errors?.email?.[0] || "Invalid email or password.",

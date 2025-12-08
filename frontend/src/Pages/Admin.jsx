@@ -14,7 +14,10 @@ const Admin = () => {
   const [message, setMessage] = useState("");
   const [userFilters, setUserFilters] = useState({ page: 1, per_page: 10 });
 
-  const token = localStorage.getItem("token");
+  // Use the same key as the rest of the app
+  const token =
+    localStorage.getItem("auth_token") || localStorage.getItem("token");
+
   const headers = useMemo(
     () => ({
       Authorization: `Bearer ${token}`,
@@ -60,7 +63,7 @@ const Admin = () => {
       );
       if (!res.ok) throw new Error("Unable to load wall posts.");
       const data = await res.json();
-      setWallArtworks(data.data || []);
+      setWallArtworks(data.data || data || []);
     } catch (err) {
       console.error(err);
       setMessage(err.message || "Unable to load wall posts.");
@@ -68,6 +71,10 @@ const Admin = () => {
   };
 
   const fetchUsers = async () => {
+    if (!token) {
+      setMessage("Please log in as an admin to view users.");
+      return;
+    }
     try {
       const query = new URLSearchParams(userFilters).toString();
       const res = await fetch(`${API_BASE_URL}/admin/users?${query}`, {
@@ -95,6 +102,7 @@ const Admin = () => {
       setLoading(false);
     };
     loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, userFilters]);
 
   const handleArtistDecision = async (artistId, action) => {
@@ -314,8 +322,8 @@ const Admin = () => {
                   </div>
                   <p className="text-sm text-gray-600">{art.description}</p>
                   <div className="text-sm text-gray-500">
-                    Uploaded by {art.artist?.name || "Artist"} ·{" "}
-                    ${art.starting_price}
+                    Uploaded by {art.artist?.name || "Artist"} · $
+                    {art.starting_price}
                   </div>
                 </article>
               ))
