@@ -9,14 +9,28 @@ class AuctionController extends Controller
 {
     public function index()
     {
-        return response()->json(Auction::with('artwork')->get());
+        $auctions = Auction::with('artwork')->get();
+
+        // Minimal Change: Iterate and update status if time has passed
+        $auctions->each(function ($auction) {
+            if ($auction->status === 'active' && now()->greaterThan($auction->end_date)) {
+                $auction->update(['status' => 'ended']);
+            }
+        });
+
+        return response()->json($auctions);
     }
 
     public function show($id)
     {
-        return response()->json(
-            Auction::with(['artwork', 'bids'])->findOrFail($id)
-        );
+        $auction = Auction::with(['artwork', 'bids'])->findOrFail($id);
+
+        // Minimal Change: Update status if time has passed before showing
+        if ($auction->status === 'active' && now()->greaterThan($auction->end_date)) {
+            $auction->update(['status' => 'ended']);
+        }
+
+        return response()->json($auction);
     }
 
     public function store(Request $request)
@@ -34,7 +48,8 @@ class AuctionController extends Controller
             'end_date' => $validated['end_date'],
             'starting_bid' => $validated['starting_bid'],
             'current_highest_bid' => null,
-            'status' => 'active',
+            // Minimal Change: Check date immediately upon creation
+            'status' => now()->greaterThan($validated['end_date']) ? 'ended' : 'active',
         ]);
 
         return response()->json($auction, 201);
@@ -44,29 +59,34 @@ class AuctionController extends Controller
     {
         $auction = Auction::findOrFail($id);
 
-        if ( $request->has('end_date')) {
-             $auction->update(['end_date' =>  $request->end_date]);
+        if ($request->has('end_date')) {
+            $auction->update(['end_date' => $request->end_date]);
+            
+            // Optional: If date is extended into the future, reactivate the auction
+            if (now()->lessThan($request->end_date) && $auction->status === 'ended') {
+                $auction->update(['status' => 'active']);
+            }
         }
 
-        return response()->json( $auction);
+        return response()->json($auction);
     }
 
-    public function destroy( $id)
+    public function destroy($id)
     {
-        Auction::destroy( $id);
+        Auction::destroy($id);
         return response()->json(['message' => 'Auction deleted']);
     }
 
-    public function winner( $id)
+    public function winner($id)
     {
-        $auction = Auction::with('bids')->findOrFail( $id);
+        $auction = Auction::with('bids')->findOrFail($id);
 
-        if (now()->lessThan( $auction->end_date)) {
+        if (now()->lessThan($auction->end_date)) {
             return response()->json(['message' => 'Auction not ended yet']);
         }
 
         return response()->json(
-             $auction->bids()->orderByDesc('amount')->first()
+            $auction->bids()->orderByDesc('amount')->first()
         );
     }
 }

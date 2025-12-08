@@ -8,7 +8,7 @@ class Bid extends Model
 {
     protected $table = 'bids';
 
-    // FIX: your table uses "id", not "bid_id"
+    // Standard primary key
     protected $primaryKey = 'id';
 
     public $incrementing = true;
@@ -19,6 +19,13 @@ class Bid extends Model
         'bid_time',
         'auction_id',
         'user_id',
+    ];
+
+    // Casts ensure 'bid_time' is treated as a Carbon date object, 
+    // and 'amount' is treated as a number/float.
+    protected $casts = [
+        'bid_time' => 'datetime',
+        'amount'   => 'decimal:2',
     ];
 
     public function auction()

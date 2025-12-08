@@ -12,13 +12,33 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'users';
+    
+    // Custom primary key definition
     protected $primaryKey = 'user_id';
+    
+    public $incrementing = true;
+    protected $keyType = 'int';
+
     protected $fillable = [
-        'name','email','password','phone','role','city','national_id','status'
+        'name',
+        'email',
+        'password',
+        'phone',
+        'role',
+        'city',
+        'national_id',
+        'status'
     ];
 
-    protected $hidden = ['password','remember_token'];
-    protected $casts = ['email_verified_at' => 'datetime'];
+    protected $hidden = [
+        'password',
+        'remember_token'
+    ];
+
+    // Removed 'password' => 'hashed' based on your request
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
 
     const ROLE_ADMIN = 'admin';
     const ROLE_ARTIST = 'artist';
@@ -28,9 +48,9 @@ class User extends Authenticatable
     const STATUS_APPROVED = 'approved';
     const STATUS_REJECTED = 'rejected';
 
-    public function isAdmin(){ return $this->role === self::ROLE_ADMIN; }
-    public function isArtist(){ return $this->role === self::ROLE_ARTIST; }
-    public function isBuyer(){ return $this->role === self::ROLE_BUYER; }
+    public function isAdmin() { return $this->role === self::ROLE_ADMIN; }
+    public function isArtist() { return $this->role === self::ROLE_ARTIST; }
+    public function isBuyer() { return $this->role === self::ROLE_BUYER; }
 
     public function artistProfile()
     {

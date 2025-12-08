@@ -41,8 +41,12 @@ class Auction extends Model
         return  $this->hasMany(Bid::class, 'auction_id');
     }
 
-    public function payments()
+    /**
+     * Get the payment record associated with the auction.
+     * Changed to hasOne because an auction only has one final payment.
+     */
+    public function payment()
     {
-        return  $this->hasMany(Payment::class, 'auction_id');
+        return  $this->hasOne(Payment::class, 'auction_id');
     }
 }

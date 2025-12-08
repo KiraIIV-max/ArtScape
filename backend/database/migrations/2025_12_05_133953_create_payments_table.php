@@ -14,7 +14,7 @@ public function up()
         $table->string('payment_method', 15)->nullable();
         $table->string('payment_status', 20)->default('pending');
         $table->foreignId('user_id')->nullable()->constrained('users', 'user_id')->onDelete('set null');
-        $table->foreignId('auction_id')->constrained('auctions')->onDelete('cascade');
+        $table->foreignId('auction_id')->unique() ->constrained('auctions') ->onDelete('cascade');
         $table->timestamps();
     });
 }
