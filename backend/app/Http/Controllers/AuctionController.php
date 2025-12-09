@@ -9,7 +9,12 @@ class AuctionController extends Controller
 {
     public function index()
     {
-        $auctions = Auction::with(['artwork', 'bids.user'])->get();
+        // Only return auctions whose artwork has been approved.
+        // Artworks must be approved by an admin before their auctions are visible to buyers.
+        $auctions = Auction::with(['artwork', 'bids.user'])
+            ->whereHas('artwork', function ($q) {
+                $q->where('status', 'approved');
+            })->get();
 
         // Minimal Change: Iterate and update status if time has passed
         $auctions->each(function ($auction) {
@@ -42,14 +47,20 @@ class AuctionController extends Controller
             'artwork_id' => 'required|exists:artworks,id',
         ]);
 
+        // If the artwork is not yet approved, keep the auction in 'pending' state
+        $artwork = \App\Models\Artwork::find($validated['artwork_id']);
+        $initialStatus = 'pending';
+        if ($artwork && $artwork->status === 'approved') {
+            $initialStatus = now()->greaterThan($validated['end_date']) ? 'ended' : 'active';
+        }
+
         $auction = Auction::create([
             'artwork_id' => $validated['artwork_id'],
             'start_date' => $validated['start_date'],
             'end_date' => $validated['end_date'],
             'starting_bid' => $validated['starting_bid'],
             'current_highest_bid' => null,
-            // Minimal Change: Check date immediately upon creation
-            'status' => now()->greaterThan($validated['end_date']) ? 'ended' : 'active',
+            'status' => $initialStatus,
         ]);
 
         return response()->json($auction, 201);

@@ -216,7 +216,21 @@ class AdminController extends Controller
             return response()->json(['message' => 'Artwork is already approved.'], 400);
         }
 
+        // Approve the artwork
          $artwork->update(['status' => Artwork::STATUS_APPROVED]);
+
+        // Activate any pending auctions for this artwork if their dates are appropriate
+        $auctions = Auction::where('artwork_id', $artwork->id)->where('status', 'pending')->get();
+        foreach ($auctions as $auction) {
+            if (now()->greaterThan($auction->end_date)) {
+                $auction->update(['status' => 'ended']);
+            } elseif (now()->lessThan($auction->start_date)) {
+                // keep pending until start_date arrives
+                // optionally leave as pending
+            } else {
+                $auction->update(['status' => 'active']);
+            }
+        }
 
         return response()->json([
             'message' => 'Artwork approved successfully.',
