@@ -23,6 +23,8 @@ const Upload = () => {
   });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [extendHours, setExtendHours] = useState(1);
@@ -60,6 +62,10 @@ const Upload = () => {
           : "",
       });
       setPreview(artwork.image_url || "");
+      // prefill tags if artwork has tags
+      if (artwork.tags && Array.isArray(artwork.tags)) {
+        setTags(artwork.tags.map(t => t.name));
+      }
     } else if (!isEditing) {
       // Set default auction start time to current date/time for new artworks
       const now = new Date();
@@ -96,6 +102,29 @@ const Upload = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddTag = (e) => {
+    e.preventDefault();
+    const raw = tagInput.trim();
+    if (!raw) return;
+    // allow comma-separated input to add multiple
+    const parts = raw.split(",").map(p => p.trim()).filter(Boolean);
+    const next = [...tags];
+    for (const p of parts) {
+      // enforce server-side max (30) on client to avoid server validation errors
+      if (p.length > 30) {
+        setStatusMessage(`Tag '${p}' is too long (max 30 characters).`);
+        continue;
+      }
+      if (!next.includes(p)) next.push(p);
+    }
+    setTags(next);
+    setTagInput("");
+  };
+
+  const handleRemoveTag = (t) => {
+    setTags(prev => prev.filter(x => x !== t));
   };
 
   const handleFileChange = (e) => {
@@ -151,6 +180,11 @@ const handleSubmit = async (e) => {
       formData.append("image_url", form.image_url);
     }
 
+    // Append tags array if provided
+    if (tags && tags.length > 0) {
+      tags.forEach(tag => formData.append('tags[]', tag));
+    }
+
     if (isEditing) {
       formData.append("_method", "PUT");
     }
@@ -171,7 +205,19 @@ const handleSubmit = async (e) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Failed to save artwork");
+      // Laravel validation errors come in data.errors as an object
+      let msg = data.message || "Failed to save artwork";
+      if (data.errors && typeof data.errors === 'object') {
+        const parts = [];
+        Object.values(data.errors).forEach(arr => {
+          if (Array.isArray(arr)) parts.push(...arr);
+        });
+        if (parts.length) msg = parts.join(' | ');
+      } else if (data.error) {
+        msg = data.error;
+      }
+      console.error('Upload failed response:', data);
+      throw new Error(msg);
     }
 
     setStatusMessage(isEditing ? "Artwork updated!" : "Artwork uploaded!");
@@ -389,6 +435,36 @@ const handleSubmit = async (e) => {
                 min="1"
                 className="block rounded-full w-xl ml-3 px-10 py-3 bg-gray-200"
               />
+            </label>
+
+            <label className="text-black font-semibold">
+              Tags (add then press Enter or click Add)
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddTag(e); }}
+                  placeholder="e.g. abstract, portrait"
+                  type="text"
+                  className="block rounded-full w-xl ml-3 px-6 py-2 bg-white border border-gray-300"
+                />
+                <button
+                  onClick={handleAddTag}
+                  type="button"
+                  className="rounded-full bg-gray-800 text-white px-4 py-2 text-sm font-semibold hover:bg-black transition"
+                >
+                  Add
+                </button>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {tags.map((t) => (
+                  <span key={t} className="inline-flex items-center gap-2 bg-gray-200 px-3 py-1 rounded-full text-sm">
+                    {t}
+                    <button type="button" onClick={() => handleRemoveTag(t)} className="ml-2 text-red-600 font-bold">×</button>
+                  </span>
+                ))}
+              </div>
             </label>
           </div>
         </form>

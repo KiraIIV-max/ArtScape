@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Artist;
 use App\Models\Artwork;
+use App\Models\Tag;
 use App\Models\Auction;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class ArtistController extends Controller
             return response()->json(['message' => 'Only approved artists can create artworks'], 403);
         }
 
-         $validated =  $request->validate([
+            $validated =  $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'image_url' => 'nullable|url',
@@ -30,7 +31,10 @@ class ArtistController extends Controller
             'starting_price' => 'required|numeric|min:0',
             'category_id' => 'required|exists:categories,categorie_id',
             'auction_start' => 'required|date',
-            'auction_end' => 'required|date|after:auction_start',
+                'auction_end' => 'required|date|after:auction_start',
+                'tags' => 'nullable|array',
+                // DB column 'name' is 30 chars — keep validation in sync to avoid SQL errors
+                'tags.*' => 'string|max:30',
         ]);
 
         DB::beginTransaction();
@@ -52,6 +56,22 @@ class ArtistController extends Controller
                 'category_id' =>  $validated['category_id'],
                 'status' => 'pending',
             ]);
+
+            // Handle tags if provided: create new tags and attach to artwork
+            if (!empty($validated['tags']) && is_array($validated['tags'])) {
+                $tagIds = [];
+                foreach ($validated['tags'] as $tagName) {
+                    $name = trim($tagName);
+                    if ($name === '') continue;
+                    $tag = Tag::firstOrCreate(['name' => $name]);
+                    // Tag model uses primaryKey 'tag_id'
+                    $tagIds[] = $tag->tag_id ?? $tag->getKey();
+                }
+
+                if (!empty($tagIds)) {
+                    $artwork->tags()->sync($tagIds);
+                }
+            }
 
             // Create auction
              $auction = Auction::create([
