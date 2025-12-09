@@ -28,9 +28,21 @@ class CloseExpiredAuctions extends Command
             $highestBid = $auction->bids()->orderBy('amount', 'desc')->first();
 
             if ($highestBid) {
-                // Determine Winner
-                $auction->status = Auction::STATUS_PENDING; // Pending Payment
+                // Determine Winner: mark auction ended, set final bid
+                $auction->status = Auction::STATUS_ENDED;
                 $auction->current_highest_bid = $highestBid->amount;
+
+                // Mark the related artwork as sold so it cannot be offered in new auctions
+                try {
+                    $artwork = $auction->artwork;
+                    if ($artwork) {
+                        $artwork->status = 'sold';
+                        $artwork->save();
+                    }
+                } catch (\Throwable $e) {
+                    // Log or ignore; don't break the closing loop
+                }
+
                 // You might trigger a notification to the winner here
             } else {
                 // No bids, just close it

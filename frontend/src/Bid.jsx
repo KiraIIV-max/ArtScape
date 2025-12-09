@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { MdOutlineCalendarMonth } from "react-icons/md";
 
 const API_BASE = "http://127.0.0.1:8000/api";
@@ -22,6 +23,39 @@ export default function Bid() {
   const [placeOk, setPlaceOk] = useState(null);
 
   const token = localStorage.getItem("auth_token"); // Assume stored after login
+  const navigate = useNavigate();
+  const storedUser = localStorage.getItem("user");
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  const [detectedUser, setDetectedUser] = useState(currentUser || null);
+  const currentUserId = detectedUser?.user_id ?? detectedUser?.id ?? null;
+  const [handledWinners, setHandledWinners] = useState(() => new Set());
+  const [pendingWins, setPendingWins] = useState([]);
+
+  // Try to detect current user from API (sanctum cookie or bearer token) if not present in localStorage
+  useEffect(() => {
+    let mounted = true;
+    const tryFetchMe = async () => {
+      if (detectedUser) return;
+      try {
+        if (token) {
+          const res = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } });
+          if (!res.ok) return;
+          const j = await res.json();
+          if (mounted) setDetectedUser(j);
+          return;
+        }
+        // try cookie-based (sanctum) auth
+        const res2 = await fetch(`${API_BASE}/me`, { credentials: 'include' });
+        if (!res2.ok) return;
+        const j2 = await res2.json();
+        if (mounted) setDetectedUser(j2);
+      } catch (e) {
+        // ignore
+      }
+    };
+    tryFetchMe();
+    return () => { mounted = false };
+  }, [detectedUser, token]);
 
   // Fetch auctions (with artwork)
   useEffect(() => {
@@ -138,6 +172,112 @@ export default function Bid() {
     }
   };
 
+  // Poll for auction winner when an auction is selected.
+  useEffect(() => {
+    if (!selectedAuction) return;
+
+    let mounted = true;
+    const checkWinner = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/auctions/${selectedAuction.id}/winner`);
+        if (!res.ok) return;
+        const data = await res.json();
+        console.log('checkWinner response for auction', selectedAuction.id, data);
+        if (!mounted) return;
+        // AuctionController returns a bid object when ended, or a message if not ended.
+        if (data && !data.message && data.user_id) {
+          console.log('Winner detected:', data.user_id, 'currentUserId:', currentUserId);
+          // If current user is the winner, redirect to artworkwon page
+          if (currentUserId && Number(data.user_id) === Number(currentUserId)) {
+            console.log('Navigating to artworkwon for auction', selectedAuction.id);
+            // navigate with state and auctionId query so page still works after refresh
+            navigate(`/artworkwon?auctionId=${selectedAuction.id}`, { state: { auction: selectedAuction, winner: data } });
+          }
+        } else {
+          if (data && data.message) console.log('Winner endpoint message:', data.message);
+        }
+      } catch (e) {
+        // ignore polling errors
+        console.error('checkWinner error', e);
+      }
+    };
+
+    // Immediately check, then poll
+    checkWinner();
+    const iv = setInterval(checkWinner, 8000);
+    return () => {
+      mounted = false;
+      clearInterval(iv);
+    };
+  }, [selectedAuction, currentUserId, navigate]);
+
+  // Background poll: check all auctions for any ended/closed auctions
+  // where the current user is the winner. This makes redirect reliable
+  // even when the user doesn't have the auction details open.
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    let mounted = true;
+
+    const checkAllAuctions = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/auctions`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (!mounted) return;
+
+        for (const auc of data) {
+          // consider ended/closed/ended statuses as finished auctions
+          if (['ended', 'closed'].includes(auc.status)) {
+            // find highest bid (bids are ordered desc from backend?)
+            const highest = (auc.bids || []).reduce((max, b) => {
+              return !max || Number(b.amount) > Number(max.amount) ? b : max;
+            }, null);
+            if (highest && Number(highest.user_id) === Number(currentUserId)) {
+              if (!handledWinners.has(auc.id)) {
+                // mark handled
+                setHandledWinners((prev) => {
+                  const next = new Set(prev);
+                  next.add(auc.id);
+                  return next;
+                });
+
+                // If the user is currently viewing this auction, navigate immediately.
+                if (selectedAuction && selectedAuction.id === auc.id) {
+                  navigate(`/artworkwon?auctionId=${auc.id}`, { state: { auction: auc, winner: highest } });
+                  return; // stop after navigation
+                }
+
+                // Otherwise add to pending wins and show a non-intrusive banner instead of redirecting
+                setPendingWins((prev) => {
+                  if (prev.some((p) => p.auction.id === auc.id)) return prev;
+                  return [...prev, { auction: auc, winner: highest }];
+                });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    // initial check + poll
+    checkAllAuctions();
+    const iv = setInterval(checkAllAuctions, 8000);
+    return () => {
+      mounted = false;
+      clearInterval(iv);
+    };
+  }, [currentUserId, handledWinners, navigate]);
+
+  const auctionActive = selectedAuction
+    ? new Date(selectedAuction.start_date) < new Date() &&
+      new Date(selectedAuction.end_date) > new Date() &&
+      selectedAuction.artwork?.status !== 'sold'
+    : false;
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -157,6 +297,54 @@ export default function Bid() {
           </a>
         </div>
       </header>
+
+      {pendingWins.length > 0 && (
+        <div className="rounded-lg shadow-md overflow-hidden">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-sm font-semibold">You have {pendingWins.length} new win{pendingWins.length>1? 's' : ''}</div>
+                <div className="text-xs opacity-90">Congratulations — your winning auctions are listed below.</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setPendingWins([])} className="text-white/90 text-sm px-3 py-1 rounded border border-white/20">Dismiss All</button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-3">
+            <div className="grid gap-3">
+              {pendingWins.map((p) => (
+                <div key={p.auction.id} className="flex items-center gap-3">
+                  <img src={p.auction.artwork?.image_url} alt={p.auction.artwork?.title} className="w-16 h-12 object-cover rounded-md bg-gray-100"/>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{p.auction.artwork?.title ?? `Auction #${p.auction.id}`}</div>
+                    <div className="text-xs text-gray-500">Winning bid: ${Number(p.winner.amount ?? p.winner.bid_amount ?? 0).toFixed(2)}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        // navigate to the artworkwon page for that auction (do not remove other wins)
+                        navigate(`/artworkwon?auctionId=${p.auction.id}`, { state: { auction: p.auction, winner: p.winner } });
+                      }}
+                      className="px-3 py-1 bg-black text-white rounded text-sm"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => setPendingWins((prev) => prev.filter((x) => x.auction.id !== p.auction.id))}
+                      className="text-sm text-gray-500 hover:text-gray-700"
+                      title="Dismiss this win"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 items-end">
         <div className="flex flex-col">
@@ -356,13 +544,20 @@ export default function Bid() {
                 className="w-full border rounded px-3 py-2"
                 value={bidAmount}
                 onChange={(e) => setBidAmount(e.target.value)}
-                disabled={!token || placing}
+                disabled={!token || placing || !auctionActive}
               />
+              {!auctionActive && (
+                <p className="text-sm text-gray-600">
+                  {selectedAuction?.artwork?.status === 'sold'
+                    ? 'This artwork has been sold and is no longer available.'
+                    : 'Auction is not active.'}
+                </p>
+              )}
               {placeErr && <p className="text-sm text-red-600">{placeErr}</p>}
               {placeOk && <p className="text-sm text-green-700">{placeOk}</p>}
               <button
                 onClick={handlePlaceBid}
-                disabled={!token || placing}
+                disabled={!token || placing || !auctionActive}
                 className="w-full px-3 py-2 rounded bg-black text-white text-sm disabled:opacity-50"
               >
                 {placing ? "Placing..." : "Place bid"}

@@ -9,7 +9,7 @@ class AuctionController extends Controller
 {
     public function index()
     {
-        $auctions = Auction::with('artwork')->get();
+        $auctions = Auction::with(['artwork', 'bids.user'])->get();
 
         // Minimal Change: Iterate and update status if time has passed
         $auctions->each(function ($auction) {
@@ -23,7 +23,7 @@ class AuctionController extends Controller
 
     public function show($id)
     {
-        $auction = Auction::with(['artwork', 'bids'])->findOrFail($id);
+        $auction = Auction::with(['artwork', 'bids.user'])->findOrFail($id);
 
         // Minimal Change: Update status if time has passed before showing
         if ($auction->status === 'active' && now()->greaterThan($auction->end_date)) {
@@ -79,14 +79,13 @@ class AuctionController extends Controller
 
     public function winner($id)
     {
-        $auction = Auction::with('bids')->findOrFail($id);
+        $auction = Auction::with('bids.user')->findOrFail($id);
 
         if (now()->lessThan($auction->end_date)) {
             return response()->json(['message' => 'Auction not ended yet']);
         }
 
-        return response()->json(
-            $auction->bids()->orderByDesc('amount')->first()
-        );
+        $winner = $auction->bids()->with('user')->orderByDesc('amount')->first();
+        return response()->json($winner);
     }
 }
