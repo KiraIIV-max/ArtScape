@@ -11,6 +11,7 @@ import Landing from "./Pages/Landing.jsx";
 import Buyer from "./Pages/Buyer.jsx";
 import Artist from "./Pages/Artist.jsx";
 import Artworkwon from "./Pages/Artworkwon.jsx";
+import Payment from "./Pages/Payment.jsx";
 
 function Layout() {
   const location = useLocation();
@@ -32,6 +33,7 @@ function Layout() {
         <Route path="/artist" element={<Artist />} />
         <Route path="/buyer" element={<Buyer />} />
         <Route path="/artworkwon" element={<Artworkwon />} />
+        <Route path="/payment" element={<Payment />} />
       </Routes>
     </>
   );

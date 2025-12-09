@@ -6,8 +6,6 @@ const API_BASE = 'http://127.0.0.1:8000/api'
 const Artworkwon = () => {
   const { state } = useLocation()
   const [searchParams] = useSearchParams()
-  const auctionFromState = state?.auction
-  const winnerFromState = state?.winner
 
   const [wins, setWins] = useState([])
   const [loading, setLoading] = useState(false)
@@ -107,7 +105,7 @@ const Artworkwon = () => {
                 if (!exists) candidates.unshift({ auction: auctionData, winner: winnerData })
               }
             }
-          } catch (e) {
+          } catch {
             // ignore per-auction fetch errors
           }
         }
@@ -117,9 +115,9 @@ const Artworkwon = () => {
 
         if (!mounted) return
         setWins(candidates)
-      } catch (e) {
+      } catch (err) {
         if (!mounted) return
-        setError(String(e.message || e))
+        setError(String(err.message || err))
       } finally {
         if (mounted) setLoading(false)
       }
@@ -176,7 +174,7 @@ const Artworkwon = () => {
                 </div>
 
                 <div className="mt-3 flex items-center gap-2">
-                  <a href={`/payments?auctionId=${auction.id}`} className="inline-block px-3 py-2 bg-blue-600 text-white rounded text-sm">Continue to payment</a>
+                  <Link to={`/payment?auctionId=${auction.id}`} className="inline-block px-3 py-2 bg-blue-600 text-white rounded text-sm">Continue to payment</Link>
                   <Link to={`/artworkwon?auctionId=${auction.id}`} className="inline-block px-3 py-2 border rounded text-sm">View details</Link>
                 </div>
 
@@ -194,7 +192,7 @@ const Artworkwon = () => {
   )
 }
 
-function DebugPanel() {
+  function DebugPanel() {
   const [raw, setRaw] = useState(null)
   const [candidates, setCandidates] = useState(null)
   const [detectedUser, setDetectedUser] = useState(null)
@@ -207,7 +205,7 @@ function DebugPanel() {
     for (const k of keys) {
       const v = localStorage.getItem(k)
       if (v) {
-        try { found = JSON.parse(v); setDetectedUser({ key: k, value: found }); break } catch(e) { setDetectedUser({ key: k, value: v }); break }
+        try { found = JSON.parse(v); setDetectedUser({ key: k, value: found }); break } catch { setDetectedUser({ key: k, value: v }); break }
       }
     }
     setToken(localStorage.getItem('auth_token') || localStorage.getItem('token'))
@@ -235,8 +233,8 @@ function DebugPanel() {
         }
       }
       setCandidates(cand)
-    } catch (e) {
-      setRaw({ error: String(e) })
+    } catch (err) {
+      setRaw({ error: String(err) })
     }
   }
 
