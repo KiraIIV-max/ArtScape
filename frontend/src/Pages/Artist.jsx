@@ -101,7 +101,9 @@ const Artist = () => {
       });
       if (!res.ok) throw new Error("Delete failed.");
       setArtworks((prev) =>
-        prev.filter((art) => art.artwork_id !== artworkId && art.id !== artworkId)
+        prev.filter(
+          (art) => art.artwork_id !== artworkId && art.id !== artworkId
+        )
       );
       setMessage("Artwork deleted.");
     } catch (err) {
@@ -145,7 +147,9 @@ const Artist = () => {
             return {
               ...art,
               auction: Array.isArray(art.auction)
-                ? art.auction.map((a) => (a.id === auction.id ? data.auction : a))
+                ? art.auction.map((a) =>
+                    a.id === auction.id ? data.auction : a
+                  )
                 : data.auction,
             };
           }
@@ -155,22 +159,6 @@ const Artist = () => {
     } catch (err) {
       console.error(err);
       setMessage(err.message || "Extension failed.");
-    }
-  };
-
-  const handleFetchWinner = async (auctionId) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/auctions/${auctionId}/winner`, {
-        headers,
-      });
-      if (!res.ok) throw new Error("Unable to fetch winner yet.");
-      const data = await res.json();
-      setMessage(
-        `Winner: ${data.winner?.name} (${data.winner?.email}) · \$${data.winner?.bid_amount}`
-      );
-    } catch (err) {
-      console.error(err);
-      setMessage(err.message || "No winner yet.");
     }
   };
 
@@ -194,9 +182,11 @@ const Artist = () => {
             <div className="flex items-center gap-3">
               <img src={Photoroom} alt="logo" className="w-16 h-16" />
               <div>
-                <h1 className="text-4xl font-bold tracking-tight">Artist Hub</h1>
+                <h1 className="text-4xl font-bold tracking-tight">
+                  Artist Hub
+                </h1>
                 <p className="text-sm uppercase tracking-wide text-gray-500">
-                  Manage artworks · Extend auctions · See winners
+                  Manage artworks · Extend auctions
                 </p>
               </div>
             </div>
@@ -219,8 +209,8 @@ const Artist = () => {
             </div>
             {artistStatus && artistStatus !== "approved" && (
               <div className="rounded-xl bg-yellow-50 border border-yellow-300 px-4 py-3 text-sm text-yellow-800">
-                Your account is currently <strong>{artistStatus}</strong>. Artworks
-                and uploads remain invisible until approval completes.
+                Your account is currently <strong>{artistStatus}</strong>.
+                Artworks and uploads remain invisible until approval completes.
               </div>
             )}
           </header>
@@ -236,7 +226,9 @@ const Artist = () => {
             {loading ? (
               <p>Loading your artworks…</p>
             ) : artworks.length === 0 ? (
-              <p className="text-gray-500">You haven’t uploaded any artworks yet.</p>
+              <p className="text-gray-500">
+                You haven’t uploaded any artworks yet.
+              </p>
             ) : (
               <div className="space-y-4">
                 {artworks.map((art) => (
@@ -270,7 +262,9 @@ const Artist = () => {
                     </div>
                     <div className="flex flex-col md:flex-row gap-4">
                       <div className="flex-1 space-y-2">
-                        <p className="text-gray-600 text-sm">{art.description}</p>
+                        <p className="text-gray-600 text-sm">
+                          {art.description}
+                        </p>
                         <div className="text-sm text-gray-500">
                           <span>Starting price: </span>
                           <span className="font-semibold">
@@ -300,8 +294,13 @@ const Artist = () => {
                             >
                               <div className="flex justify-between items-center">
                                 <p className="text-sm text-gray-500">
-                                  {new Date(auction.start_date).toLocaleString()} →
-                                  {` ${new Date(auction.end_date).toLocaleString()}`}
+                                  {new Date(
+                                    auction.start_date
+                                  ).toLocaleString()}{" "}
+                                  →
+                                  {` ${new Date(
+                                    auction.end_date
+                                  ).toLocaleString()}`}
                                 </p>
                                 <span className="text-xs uppercase tracking-wider text-gray-400">
                                   {isActive
@@ -320,20 +319,16 @@ const Artist = () => {
                                     Extend auction
                                   </button>
                                 )}
-                                {isEnded && (
-                                  <button
-                                    onClick={() => handleFetchWinner(auction.id)}
-                                    className="rounded-full border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-blue-500 hover:text-blue-600 transition"
-                                  >
-                                    View winner
-                                  </button>
-                                )}
                               </div>
                               <p className="text-xs text-gray-500">
                                 Bids accepted between{" "}
-                                {new Date(auction.start_date).toLocaleTimeString()}{" "}
+                                {new Date(
+                                  auction.start_date
+                                ).toLocaleTimeString()}{" "}
                                 (inclusive) and{" "}
-                                {new Date(auction.end_date).toLocaleTimeString()}{" "}
+                                {new Date(
+                                  auction.end_date
+                                ).toLocaleTimeString()}{" "}
                                 (exclusive).
                               </p>
                             </div>

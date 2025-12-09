@@ -7,6 +7,9 @@ use App\Models\Artwork;
 use App\Models\Auction;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Exception;
+
 
 class ArtistController extends Controller
 {
@@ -22,31 +25,64 @@ class ArtistController extends Controller
          $validated =  $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'image_url' => 'required|url',
+            'image_url' => 'nullable|url',
+            'image' => 'nullable|image|max:2048',
             'starting_price' => 'required|numeric|min:0',
             'category_id' => 'required|exists:categories,categorie_id',
+            'auction_start' => 'required|date',
+            'auction_end' => 'required|date|after:auction_start',
         ]);
 
-         $artwork = Artwork::create([
-            'title' =>  $validated['title'],
-            'description' =>  $validated['description'],
-            'image_url' =>  $validated['image_url'],
-            'starting_price' =>  $validated['starting_price'],
-            'artist_id' =>  $artist->artist_id,
-            'category_id' =>  $validated['category_id'],
-            'status' => 'pending',
-        ]);
+        DB::beginTransaction();
+        try {
+            // Handle image upload if file provided
+             $imageUrl =  $validated['image_url'] ?? null;
+            if ( $request->hasFile('image')) {
+                 $path =  $request->file('image')->store('artworks', 'public');
+                 $imageUrl = asset('storage/' .  $path);
+            }
 
-        return response()->json([
-            'message' => 'Artwork created. Awaiting approval.',
-            'artwork' =>  $artwork
-        ], 201);
+            // Create artwork
+             $artwork = Artwork::create([
+                'title' =>  $validated['title'],
+                'description' =>  $validated['description'],
+                'image_url' =>  $imageUrl,
+                'starting_price' =>  $validated['starting_price'],
+                'artist_id' =>  $artist->artist_id,
+                'category_id' =>  $validated['category_id'],
+                'status' => 'pending',
+            ]);
+
+            // Create auction
+             $auction = Auction::create([
+                'artwork_id' =>  $artwork->id,
+                'start_date' =>  $validated['auction_start'],
+                'end_date' =>  $validated['auction_end'],
+                'starting_bid' =>  $validated['starting_price'],
+                'current_highest_bid' => null,
+                'status' => 'pending',
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Artwork created. Awaiting approval.',
+                'artwork' =>  $artwork->load('auctions'),
+            ], 201);
+
+        } catch (Exception  $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to create artwork.',
+                'error' =>  $e->getMessage()
+            ], 500);
+        }
     }
 
     public function listArtworks()
     {
          $artist = Artist::where('user_id', auth()->id())->firstOrFail();
-        return response()->json( $artist->artworks);
+        return response()->json( $artist->artworks()->with('auctions')->get());
     }
 
     public function updateArtwork(Request  $request,  $artworkId)
@@ -58,15 +94,51 @@ class ArtistController extends Controller
                           ->firstOrFail();
 
          $validated =  $request->validate([
-            'title' => 'string|max:255',
-            'description' => 'string',
-            'image_url' => 'url',
-            'starting_price' => 'numeric|min:0',
+            'title' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'image_url' => 'nullable|url',
+            'image' => 'nullable|image|max:2048',
+            'starting_price' => 'nullable|numeric|min:0',
+            'auction_end' => 'nullable|date|after:now',
         ]);
 
-        $artwork->update( $validated);
+        DB::beginTransaction();
+        try {
+            // Handle image upload if file provided
+            if ( $request->hasFile('image')) {
+                 $path =  $request->file('image')->store('artworks', 'public');
+                 $validated['image_url'] = asset('storage/' .  $path);
+                unset( $validated['image']);
+            }
 
-        return response()->json(['message' => 'Artwork updated', 'artwork' =>  $artwork]);
+            // Update artwork
+            $artwork->update(array_filter($validated, fn( $key) =>
+                in_array( $key, ['title', 'description', 'image_url', 'starting_price']),
+                ARRAY_FILTER_USE_KEY
+            ));
+
+            // Update auction end date if provided
+            if (isset( $validated['auction_end'])) {
+                 $auction =  $artwork->auctions()->first();
+                if ($auction && in_array( $auction->status, ['active', 'pending'])) {
+                     $auction->update(['end_date' =>  $validated['auction_end']]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Artwork updated',
+                'artwork' =>  $artwork->load('auctions')
+            ]);
+
+        } catch (Exception  $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to update artwork.',
+                'error' =>  $e->getMessage()
+            ], 500);
+        }
     }
 
     public function deleteArtwork( $artworkId)

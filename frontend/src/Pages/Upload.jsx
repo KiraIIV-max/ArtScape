@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiUpload } from "react-icons/fi";
 import { useLocation, useNavigate } from "react-router-dom";
 import Footer from "../components/Footer.jsx";
@@ -18,11 +18,29 @@ const Upload = () => {
     starting_price: "",
     image_url: "",
     category_id: "",
+    auction_start: "",
+    auction_end: "",
   });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [extendHours, setExtendHours] = useState(1);
+
+  // Normalize auction from artwork (can be object or array)
+  const auction = useMemo(() => {
+    if (!artwork) return null;
+    if (artwork.auction && Array.isArray(artwork.auction))
+      return artwork.auction[0];
+    if (artwork.auction && !Array.isArray(artwork.auction))
+      return artwork.auction;
+    if (artwork.auctions && Array.isArray(artwork.auctions))
+      return artwork.auctions[0];
+    return null;
+  }, [artwork]);
+
+  const canExtend =
+    auction && auction.end_date && new Date() < new Date(auction.end_date);
 
   useEffect(() => {
     if (artwork) {
@@ -32,16 +50,45 @@ const Upload = () => {
         starting_price: artwork.starting_price || "",
         image_url: artwork.image_url || "",
         category_id: artwork.category_id || "",
+        auction_start: artwork.auction_start
+          ? artwork.auction_start.slice(0, 16)
+          : "",
+        auction_end: artwork.auction_end
+          ? artwork.auction_end.slice(0, 16)
+          : auction?.end_date
+          ? auction.end_date.slice(0, 16)
+          : "",
       });
       setPreview(artwork.image_url || "");
+    } else if (!isEditing) {
+      // Set default auction start time to current date/time for new artworks
+      const now = new Date();
+      const defaultStart = now.toISOString().slice(0, 16);
+      
+      // End date field remains empty by default
+      setForm(prev => ({
+        ...prev,
+        auction_start: defaultStart,
+        auction_end: "" // Empty by default
+      }));
     }
-  }, [artwork]);
+  }, [artwork, auction, isEditing]);
 
+  // Headers for FormData (do NOT set Content-Type)
   const headers = useMemo(
     () => ({
       Authorization: `Bearer ${storedToken}`,
       Accept: "application/json",
-      // DO NOT set Content-Type here for FormData
+    }),
+    [storedToken]
+  );
+
+  // Headers for JSON requests (e.g., extend)
+  const jsonHeaders = useMemo(
+    () => ({
+      Authorization: `Bearer ${storedToken}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
     }),
     [storedToken]
   );
@@ -59,61 +106,119 @@ const Upload = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!storedToken) {
-      setStatusMessage("You must be logged in to submit artwork.");
-      return;
+  if (!storedToken) {
+    setStatusMessage("You must be logged in.");
+    return;
+  }
+  if (!form.category_id) {
+    setStatusMessage("Please select a category.");
+    return;
+  }
+  if (!isEditing && !form.auction_end) {
+    setStatusMessage("Please set an auction end time.");
+    return;
+  }
+  if (!isEditing && new Date(form.auction_end) <= new Date(form.auction_start)) {
+    setStatusMessage("End time must be after start time.");
+    return;
+  }
+
+  setSubmitting(true);
+  setStatusMessage("");
+
+  try {
+    const formData = new FormData();
+    formData.append("title", form.title);
+    formData.append("description", form.description);
+    formData.append("starting_price", form.starting_price);
+    formData.append("category_id", form.category_id);
+
+    // Only send auction times when creating new artwork
+    if (!isEditing) {
+      formData.append("auction_start", form.auction_start);
+      formData.append("auction_end", form.auction_end);
+    } else if (form.auction_end) {
+      // When editing, only send new end time if changed
+      formData.append("auction_end", form.auction_end);
     }
-    if (!form.category_id) {
-      setStatusMessage("Please provide a category ID.");
-      return;
-    }
 
-    const endpoint = isEditing
-      ? `${API_BASE_URL}/artist/artworks/${artwork.artwork_id || artwork.id}`
-      : `${API_BASE_URL}/artist/artworks`;
-    const method = isEditing ? "POST" : "POST"; // use POST + _method for edit
-
-    const fd = new FormData();
-    fd.append("title", form.title);
-    fd.append("description", form.description);
-    fd.append("starting_price", Number(form.starting_price));
-    fd.append("category_id", Number(form.category_id));
-
-    // If you want to upload a file:
     if (file) {
-      fd.append("image", file); // backend should expect 'image'
+      formData.append("image", file);
     } else if (form.image_url) {
-      // If backend supports image_url, append it too
-      fd.append("image_url", form.image_url);
+      formData.append("image_url", form.image_url);
     }
 
     if (isEditing) {
-      fd.append("_method", "PUT");
+      formData.append("_method", "PUT");
     }
 
-    setSubmitting(true);
-    setStatusMessage("");
+    const endpoint = isEditing
+      ? `${API_BASE_URL}/artist/artworks/${artwork.id}`
+      : `${API_BASE_URL}/artist/artworks`;
 
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${storedToken}`,
+        Accept: "application/json",
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to save artwork");
+    }
+
+    setStatusMessage(isEditing ? "Artwork updated!" : "Artwork uploaded!");
+    setTimeout(() => navigate("/artist"), 1500);
+  } catch (error) {
+    setStatusMessage(error.message || "Something went wrong");
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+  const handleExtendAuction = useCallback(async () => {
+    if (!storedToken) {
+      setStatusMessage("You must be logged in to extend an auction.");
+      return;
+    }
+    if (!auction) {
+      setStatusMessage("No auction found for this artwork.");
+      return;
+    }
+    if (extendHours < 1 || extendHours > 72) {
+      setStatusMessage("Hours must be between 1 and 72.");
+      return;
+    }
     try {
-      const res = await fetch(endpoint, {
-        method,
-        headers,
-        body: fd,
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/artist/auctions/${auction.id}/extend`,
+        {
+          method: "POST",
+          headers: jsonHeaders,
+          body: JSON.stringify({ hours: Number(extendHours) }),
+        }
+      );
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || "Unable to save artwork.");
-      setStatusMessage(isEditing ? "Artwork updated successfully." : "Artwork uploaded!");
-      navigate("/artist");
+      if (!res.ok) throw new Error(data.message || "Unable to extend auction.");
+      setStatusMessage("Auction extended.");
+      if (data.auction?.end_date) {
+        setForm((prev) => ({
+          ...prev,
+          auction_end: data.auction.end_date.slice(0, 16),
+        }));
+      }
     } catch (err) {
       console.error(err);
-      setStatusMessage(err.message || "Something went wrong.");
-    } finally {
-      setSubmitting(false);
+      setStatusMessage(err.message || "Extension failed.");
     }
-  };
+  }, [auction, extendHours, jsonHeaders, storedToken]);
 
   return (
     <>
@@ -193,6 +298,74 @@ const Upload = () => {
                 className="block rounded-full w-xl ml-3 px-10 py-3 bg-gray-200"
               />
             </label>
+            
+            {/* Auction Start Time - Read-only when editing */}
+            <label className="text-black font-semibold">
+              Auction Start Time
+              <input
+                name="auction_start"
+                value={form.auction_start}
+                onChange={handleChange}
+                required
+                type="datetime-local"
+                readOnly={isEditing} // Read-only when editing
+                className={`block rounded-full w-xl ml-3 px-10 py-3 bg-gray-200 ${isEditing ? 'cursor-not-allowed opacity-70' : ''}`}
+              />
+            </label>
+            
+            {/* Auction End Time - Always editable */}
+            <label className="text-black font-semibold">
+              Auction End Time
+              <input
+                name="auction_end"
+                value={form.auction_end}
+                onChange={handleChange}
+                required
+                type="datetime-local"
+                className="block rounded-full w-xl ml-3 px-10 py-3 bg-gray-200"
+              />
+            </label>
+
+            {isEditing && auction && (
+              <div className="mt-2 rounded-xl bg-blue-50 border border-blue-200 p-4">
+                <p className="text-sm text-gray-700 mb-2">
+                  Current auction window:{" "}
+                  <strong>
+                    {new Date(auction.start_date).toLocaleString()}
+                  </strong>{" "}
+                  →{" "}
+                  <strong>{new Date(auction.end_date).toLocaleString()}</strong>
+                </p>
+                {canExtend ? (
+                  <div className="flex items-center gap-3">
+                    <label className="text-sm font-semibold text-gray-800">
+                      Extend by (hours 1-72):
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="72"
+                      value={extendHours}
+                      onChange={(e) => setExtendHours(Number(e.target.value))}
+                      className="w-24 rounded-full px-3 py-2 bg-white border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleExtendAuction}
+                      className="rounded-full bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 transition"
+                    >
+                      Extend auction
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-yellow-700">
+                    Auction has ended or is missing an end date; it can’t be
+                    extended.
+                  </p>
+                )}
+              </div>
+            )}
+
             <label className="text-black font-semibold">
               Image URL (optional if you upload a file)
               <input

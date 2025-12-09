@@ -50,7 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/artist/artworks/{artworkId}', [ArtistController::class, 'updateArtwork']);
     Route::delete('/artist/artworks/{artworkId}', [ArtistController::class, 'deleteArtwork']);
 
-    // FIXED: Model-binding friendly parameter name
-    Route::post('/auctions/{auction}/extend', [ArtistController::class, 'extendAuction']);
-    Route::get('/auctions/{auction}/winner', [ArtistController::class, 'getWinner']);
+    // Changed to use auctionId instead of auction for consistency
+    Route::post('/artist/auctions/{auctionId}/extend', [ArtistController::class, 'extendAuction']);
+    Route::get('/artist/auctions/{auctionId}/winner', [ArtistController::class, 'getWinner']);
 });
