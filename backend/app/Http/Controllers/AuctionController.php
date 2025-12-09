@@ -11,7 +11,7 @@ class AuctionController extends Controller
     {
         // Only return auctions whose artwork has been approved.
         // Artworks must be approved by an admin before their auctions are visible to buyers.
-        $auctions = Auction::with(['artwork.tags', 'artwork', 'bids.user'])
+        $auctions = Auction::with(['artwork.tags', 'artwork.artist', 'artwork.category', 'bids.user'])
             ->whereHas('artwork', function ($q) {
                 $q->where('status', 'approved');
             })->get();
@@ -28,7 +28,7 @@ class AuctionController extends Controller
 
     public function show($id)
     {
-        $auction = Auction::with(['artwork.tags', 'artwork', 'bids.user'])->findOrFail($id);
+        $auction = Auction::with(['artwork.tags', 'artwork.artist', 'artwork.category', 'bids.user'])->findOrFail($id);
 
         // Minimal Change: Update status if time has passed before showing
         if ($auction->status === 'active' && now()->greaterThan($auction->end_date)) {
