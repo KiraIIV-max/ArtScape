@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { MdOutlineCalendarMonth } from "react-icons/md";
+import Footer from "./components/Footer.jsx";
+
 
 const API_BASE = "http://127.0.0.1:8000/api";
 
@@ -279,6 +281,7 @@ export default function Bid() {
     : false;
 
   return (
+    <>
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -288,14 +291,7 @@ export default function Bid() {
             when signed in as a buyer.
           </p>
         </div>
-        <div className="flex gap-2">
-          <a
-            href="/register"
-            className="px-3 py-2 text-sm rounded bg-gray-900 text-white"
-          >
-            Login
-          </a>
-        </div>
+        
       </header>
 
       {pendingWins.length > 0 && (
@@ -571,5 +567,7 @@ export default function Bid() {
         </section>
       )}
     </div>
+    <Footer/>
+    </>
   );
 }
